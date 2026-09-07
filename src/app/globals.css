@@ -1,0 +1,203 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+
+  /* Rate'O brand scale (Figma "Brand Colours") */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-700: var(--brand-700);
+  --color-brand-900: var(--brand-900);
+  --color-accent-50: var(--accent-50);
+  --color-accent-400: var(--accent-400);
+  --color-accent-600: var(--accent-600);
+  --color-cream-50: var(--cream-50);
+  --color-cream-100: var(--cream-100);
+  --color-gray-400: var(--gray-400);
+
+  /* Semantic extras the mobile palette lacks */
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-star: var(--star);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* ---------------------------------------------------------------
+     Brand palette — source of truth: design/DESIGN_TOKENS.md and the
+     Figma "Rate'O Brand Guidelines / Colours" page. Figma wins over the
+     mobile app's drifted values in app-rateo/src/constants/colors.js.
+     These are the ONLY hex literals in the app (plus the themeColor in
+     layout.tsx, which Next's metadata API requires as a literal).
+     --------------------------------------------------------------- */
+  --brand-900: #113d3c; /* darkest teal — headings, nav, splash */
+  --brand-700: #005c5a; /* medium teal — primary actions, active tabs, links */
+  --accent-600: #fc9d01; /* deep amber — CTA highlight, badges, rating stars */
+  --accent-400: #feb336; /* light amber — hover accent, chips, logo accent */
+  --cream-50: #fff5e1; /* cream — app-shell canvas, soft surfaces */
+
+  /* Derived tints for surfaces (not in the guideline, kept in-family) */
+  --brand-50: #e6f0f0;
+  --brand-100: #cce1e0;
+  --accent-50: #fff3df;
+  --cream-100: #fbebc9;
+
+  /* Neutrals */
+  --neutral-0: #ffffff;
+  --neutral-950: #000000;
+  --gray-400: #a0a0a0;
+
+  /* Semantic extras */
+  --success: #12b76a;
+  --danger: #e5484d;
+  --warning: var(--accent-600);
+  --star: var(--accent-600);
+
+  /* ---- shadcn semantic mapping ------------------------------------
+     --background stays white for reading comfort; cream-50 is applied
+     explicitly as the app-shell canvas (bg-cream-50 on <main>).
+     ----------------------------------------------------------------- */
+  --background: var(--neutral-0);
+  --foreground: var(--brand-900);
+  --card: var(--neutral-0);
+  --card-foreground: var(--brand-900);
+  --popover: var(--neutral-0);
+  --popover-foreground: var(--brand-900);
+  --primary: var(--brand-700);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-50);
+  --secondary-foreground: var(--brand-900);
+  --muted: #f2f5f4;
+  --muted-foreground: #5b6b6a; /* teal-tinted grey */
+  --accent: var(--accent-50);
+  --accent-foreground: var(--brand-900);
+  --destructive: var(--danger);
+  --border: #e6e9e8;
+  --input: #e6e9e8;
+  --ring: var(--brand-700);
+  --chart-1: var(--brand-700);
+  --chart-2: var(--accent-600);
+  --chart-3: var(--brand-900);
+  --chart-4: var(--accent-400);
+  --chart-5: var(--brand-100);
+  --radius: 0.875rem;
+  --sidebar: var(--neutral-0);
+  --sidebar-foreground: var(--brand-900);
+  --sidebar-primary: var(--brand-700);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--brand-50);
+  --sidebar-accent-foreground: var(--brand-900);
+  --sidebar-border: #e6e9e8;
+  --sidebar-ring: var(--brand-700);
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Rate'O is light-only on every platform (the Expo app pins
+   `userInterfaceStyle: light`). The .dark block deliberately repeats the
+   light palette so a stray `dark` class can never break the brand. */
+.dark {
+  --background: var(--neutral-0);
+  --foreground: var(--brand-900);
+  --card: var(--neutral-0);
+  --card-foreground: var(--brand-900);
+  --popover: var(--neutral-0);
+  --popover-foreground: var(--brand-900);
+  --primary: var(--brand-700);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-50);
+  --secondary-foreground: var(--brand-900);
+  --muted: #f2f5f4;
+  --muted-foreground: #5b6b6a;
+  --accent: var(--accent-50);
+  --accent-foreground: var(--brand-900);
+  --destructive: var(--danger);
+  --border: #e6e9e8;
+  --input: #e6e9e8;
+  --ring: var(--brand-700);
+  --chart-1: var(--brand-700);
+  --chart-2: var(--accent-600);
+  --chart-3: var(--brand-900);
+  --chart-4: var(--accent-400);
+  --chart-5: var(--brand-100);
+  --sidebar: var(--neutral-0);
+  --sidebar-foreground: var(--brand-900);
+  --sidebar-primary: var(--brand-700);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--brand-50);
+  --sidebar-accent-foreground: var(--brand-900);
+  --sidebar-border: #e6e9e8;
+  --sidebar-ring: var(--brand-700);
+}
+
+@utility container-app {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 72rem; /* max-w-6xl */
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
