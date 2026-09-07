@@ -106,6 +106,7 @@ export type User = {
   firstName?: string;
   lastName?: string;
   gender?: string;
+  dob?: string;
   skills?: string[];
   experience?: Experience[];
   education?: Education[];
@@ -129,6 +130,58 @@ export type User = {
 export type Company = User & { role: 'company' };
 
 export type UsersResponse = Paginated & { users: User[] };
+
+/**
+ * Body of `PUT /users/profile`. Every field is optional - the controller only
+ * overwrites what it receives, and ignores fields that do not belong to the
+ * caller's role.
+ *
+ * Two quirks worth remembering:
+ * - `address` is a server-side alias for `location` (companies send `address`,
+ *   individuals send `location`; the controller writes both to `user.location`).
+ * - `setupCompleted` only takes effect when it is exactly `true`.
+ */
+export type UpdateProfilePayload = {
+  firstName?: string;
+  lastName?: string;
+  location?: string;
+  address?: string;
+  experience?: Experience[];
+  education?: Education[];
+  setupCompleted?: boolean;
+  companyName?: string;
+  industry?: string;
+  description?: string;
+  avatar?: string;
+  bio?: string;
+  website?: string;
+  phone?: string;
+  skills?: string[];
+  gender?: string;
+  dob?: string;
+  jobPreferences?: JobPreferences;
+  companySize?: string;
+  jobTitle?: string;
+  resume?: string;
+};
+
+/** `POST /users/avatar` - the controller returns the Cloudinary URL only. */
+export type AvatarUploadResponse = { avatar: string; message?: string };
+
+/**
+ * `POST /invitations/company`. The controller answers 201 with the invite, or
+ * 200 with `companyExists` when the address already belongs to a registered
+ * company - in which case the caller should link to `companyId` instead.
+ */
+export type CompanyInvitationResponse = {
+  message?: string;
+  inviteId?: string;
+  email?: string;
+  expiresAt?: string;
+  companyExists?: boolean;
+  companyId?: string;
+  companyName?: string;
+};
 
 /* -------------------------------------------------------------------------- */
 /* Jobs                                                                       */

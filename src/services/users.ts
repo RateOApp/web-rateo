@@ -1,5 +1,5 @@
 import { api } from '@/lib/api/client';
-import type { User } from '@/types/api';
+import type { AvatarUploadResponse, UpdateProfilePayload, User } from '@/types/api';
 
 /**
  * Client-only user API. Uploads are multipart; the `/api` proxy streams the
@@ -7,28 +7,8 @@ import type { User } from '@/types/api';
  * manually - the browser must add the multipart boundary.
  */
 
-export type UpdateProfilePayload = Partial<
-  Pick<
-    User,
-    | 'firstName'
-    | 'lastName'
-    | 'gender'
-    | 'bio'
-    | 'location'
-    | 'phone'
-    | 'skills'
-    | 'experience'
-    | 'education'
-    | 'jobPreferences'
-    | 'jobTitle'
-    | 'companyName'
-    | 'industry'
-    | 'companySize'
-    | 'website'
-    | 'description'
-    | 'avatar'
-  >
->;
+// The payload shape lives with the rest of the contract types.
+export type { UpdateProfilePayload } from '@/types/api';
 
 export const usersService = {
   /** The signed-in user. Note: `/auth/profile` does NOT include `kycStatus`. */
@@ -44,10 +24,14 @@ export const usersService = {
     return api.put<User>('/users/profile', payload).then((r) => r.data);
   },
 
-  uploadAvatar(file: File): Promise<User> {
+  /**
+   * `POST /users/avatar`, multipart field `image`. The controller replies with
+   * the Cloudinary URL (`{ message, avatar }`), NOT the updated user.
+   */
+  uploadAvatar(file: File): Promise<AvatarUploadResponse> {
     const body = new FormData();
     body.append('image', file);
-    return api.post<User>('/users/avatar', body).then((r) => r.data);
+    return api.post<AvatarUploadResponse>('/users/avatar', body).then((r) => r.data);
   },
 
   uploadResume(userId: string, file: File): Promise<{ resume?: string; message?: string }> {

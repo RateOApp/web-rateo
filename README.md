@@ -39,12 +39,19 @@ npx tsc --noEmit
 |---|---|---|---|
 | `API_BASE_URL` | **server only** | yes | Backend REST base including `/api`, e.g. `https://api-prod.rateo.ng/api` |
 | `NEXT_PUBLIC_APP_URL` | public | no (defaults to `http://localhost:3000`) | This app's own origin — `https://app.rateo.ng` in prod. Used for OG metadata, `robots.txt`, `sitemap.xml` |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | public | Phase 3 | Clerk publishable key (same Clerk instance as the mobile app) |
-| `CLERK_SECRET_KEY` | **server only** | Phase 3 | Clerk secret key |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | public | no | Clerk publishable key (same Clerk instance as the mobile app). Empty = no social sign-in |
+| `CLERK_SECRET_KEY` | **server only** | no | Clerk secret key. Needed together with the publishable key for the server-side exchange |
 
 Read them through `src/lib/env.ts` (`getApiBaseUrl()`, `getAppUrl()`) rather than
 `process.env` — `getApiBaseUrl()` throws a clear error when the variable is missing and strips
 a trailing slash.
+
+Clerk is **optional at runtime** and is read through `src/lib/clerk.ts`: `clerkEnabled`
+(publishable key present, client-safe) and `clerkServerEnabled()` (both keys present,
+server-only). With the keys empty the app skips `<ClerkProvider>`, the
+"Continue with Google / Apple / LinkedIn" buttons render nothing, `/sso-callback` redirects to
+`/login`, `POST /api/auth/social-login` answers `503`, and `proxy.ts` runs the plain cookie
+guard instead of `clerkMiddleware()`. `npm run build` passes without them.
 
 ## How auth and the API proxy work
 
@@ -75,8 +82,10 @@ RSC     ──serverFetch()─────────────────�
    | `rateo_token` | yes | Backend JWT, 30 days, `SameSite=Lax`, `Secure` in prod, path `/` |
    | `rateo_role` | yes | `individual` or `company`, for route/layout branching |
 
-3. **`proxy.ts` at the repo root** is Next 16's replacement for `middleware.ts`. It checks
-   cookie *presence* only — it never decodes or verifies the JWT. No token on `/dashboard*` or
+3. **`proxy.ts` at the repo root** is Next 16's replacement for `middleware.ts`. When both
+   Clerk keys are set the guard runs inside `clerkMiddleware()` (so `/sso-callback` and
+   `/api/auth/social-login` see the Clerk session); otherwise the bare guard is the default
+   export. Either way it checks cookie *presence* only — it never decodes or verifies the JWT. No token on `/dashboard*` or
    `/setup*` redirects to `/login?next=<path>`; a token on `/login`, `/register`,
    `/register/company` or `/forgot-password` redirects to `/dashboard`. `/verify` stays
    reachable while signed in, because that is where the emailed 5-digit code is submitted.
@@ -85,7 +94,23 @@ RSC     ──serverFetch()─────────────────�
    over the catch-all, so it never reaches the backend). `GET /api/auth/session` answers
    `{ authenticated, role }` from cookies alone.
 
-5. **Expiry.** The axios response interceptor in `src/lib/api/client.ts` treats a 401 from any
+5. **Social sign-in (Clerk).** The provider buttons call `signIn.sso()` and come back to
+   `/sso-callback`, which finishes the Clerk flow (`finalize` / `transfer`, always with
+   `navigate: async () => {}` so nothing navigates early) and then posts to
+   **`POST /api/auth/social-login`** — our own route handler, deliberately not the `/api`
+   catch-all. Clerk is only an identity provider here; the app itself runs on the backend JWT.
+
+   That handler reads the signed-in Clerk user server-side with `currentUser()`, so a
+   client-supplied email can never be trusted. It builds
+   `{ email, firstName, lastName, avatar, role?, companyName? }` — names via the mobile
+   `extractClerkName` fallback in `src/lib/clerk-name.ts`, since Apple only shares the name on
+   the first authorization — calls the backend `POST /auth/social-login`, moves `token` into
+   the httpOnly cookies and returns the body without it. The client then signs OUT of Clerk
+   with `redirectUrl` = `/setup` when `setupCompleted === false`, else the safe `next` param or
+   `/dashboard`. `role` / `companyName` ride across the OAuth round-trip in `sessionStorage`
+   under `rateo.sso`; the backend only honours them when creating a new account.
+
+6. **Expiry.** The axios response interceptor in `src/lib/api/client.ts` treats a 401 from any
    non-auth endpoint as an expired session: it calls the logout route once (bursts are guarded
    by a module flag) and hard-navigates out of `/dashboard` or `/setup` to
    `/login?next=<path>`. 401s from login / register / password-reset paths are left alone —
@@ -102,9 +127,11 @@ src/
     api/[...path]/route.ts      catch-all REST proxy -> API_BASE_URL
     api/auth/logout/route.ts    clears session cookies
     api/auth/session/route.ts   { authenticated, role } from cookies
+    api/auth/social-login/      Clerk -> Rate'O session exchange (reads currentUser())
     robots.ts, sitemap.ts
     (public) (auth) (dashboard) route groups + pages
   components/                   UI, shadcn primitives in components/ui
+    auth/                       auth pages: forms, OTP, password checklist, social buttons
   providers/                    React context / QueryClientProvider
   hooks/                        TanStack Query hooks (use-jobs, use-companies, use-me)
   services/                     one file per backend domain
@@ -119,6 +146,10 @@ src/
     api/server.ts               serverFetch(), getCurrentUser(), absoluteUrl()  [server-only]
     api/proxy.ts                proxyRequest() — the catch-all's implementation
     api/errors.ts               ApiError, getApiErrorMessage()
+    auth-error.ts               authErrorMessage() — adds the 429 "too many attempts" copy
+    clerk.ts                    clerkEnabled / clerkServerEnabled() / SSO intent helpers
+    clerk-name.ts               extractClerkName() ported from the mobile app
+    password.ts                 PASSWORD_RULES, isPasswordValid(), zod field
   types/api.ts                  hand-written mirrors of docs/API_CONTRACT.md
 ```
 
@@ -136,7 +167,9 @@ route handlers and `sitemap.ts`.
   keystore's SHA-256 certificate fingerprint (`eas credentials`, or
   `keytool -list -v -keystore <release.jks>`). Package name is already `com.rateo.mobile`.
 - Both files must be served as `application/json`; `next.config.ts` sets that header.
-- Clerk keys are empty until Phase 3.
+- Clerk keys are empty in `.env.local`; add them (Clerk dashboard → API keys, same instance as
+  the Expo app) to turn the social buttons on, and register
+  `https://app.rateo.ng/sso-callback` as an allowed redirect.
 
 ## Deploying to Vercel
 

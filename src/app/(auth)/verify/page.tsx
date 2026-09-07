@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { VerifyForm, type VerifyMode } from "@/components/auth/verify-form";
 
 export const metadata: Metadata = {
   title: "Verify your email",
 };
 
-export default function VerifyPage() {
-  return (
-    <div>
-      <h1 className="text-xl font-semibold text-brand-900">Verify your email</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Enter the code we sent to your inbox.</p>
-      <p className="mt-6 text-sm text-muted-foreground">Coming in Phase 3.</p>
-    </div>
-  );
+export default async function VerifyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string; mode?: string }>;
+}) {
+  const { email, mode } = await searchParams;
+
+  // The code is tied to an email address; without one there is nothing to
+  // verify - send the visitor back to log in.
+  if (!email) redirect("/login");
+
+  const verifyMode: VerifyMode = mode === "reset" ? "reset" : "signup";
+
+  return <VerifyForm email={email} mode={verifyMode} />;
 }

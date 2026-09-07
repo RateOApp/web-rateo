@@ -30,7 +30,12 @@ Set by the proxy when a token-issuing auth path returns `token`; cleared by
 | `rateo_token` | yes | backend JWT, 30 days, `Secure` in prod, `SameSite=Lax`, path `/` |
 | `rateo_role` | yes | `individual` or `company`, read by `proxy.ts` to route `/dashboard` |
 
-`proxy.ts` (Next 16 name for middleware) only checks cookie presence and role. It never
+`/api/auth/social-login` is a dedicated route handler (not the `/api` catch-all): it reads the
+signed-in Clerk user server-side with `currentUser()`, calls the backend, and sets the same two
+cookies from the response `token`/`role`.
+
+`proxy.ts` (Next 16 name for middleware) only checks cookie presence and role. It is wrapped in
+`clerkMiddleware()` when both Clerk keys are set, and runs bare when they are not. It never
 verifies the JWT (the backend does). The dashboard layout fetches `/auth/profile` server-side;
 a 401 there clears cookies and redirects to `/login`; `setupCompleted === false` redirects to
 `/setup`.
@@ -40,7 +45,8 @@ a 401 there clears cookies and redirects to `/login`; `setupCompleted === false`
 ```
 (public)   /            -> redirect /jobs
            /jobs, /jobs/[id], /companies, /companies/[id], /search
-(auth)     /login, /register, /register/company, /forgot-password, /verify, /sso-callback
+(auth)     /login, /register, /register/company, /forgot-password, /verify,
+           /reset-password, /sso-callback
 (dashboard)/dashboard                     role-aware home
            /dashboard/(individual)/...    saved, my-jobs, preferences, work-history, resume, kyc
            /dashboard/(company)/...       jobs, jobs/new, jobs/[id]/applicants, candidates, employees

@@ -11,30 +11,43 @@ import type { ApiMessage, ClientAuthResponse, Role, User } from '@/types/api';
 
 export type LoginPayload = { email: string; password: string };
 
+/**
+ * `phoneNumber` matches what the mobile app sends; the controller accepts
+ * either `phone` or `phoneNumber` and stores it as `phone`. Send `''` when the
+ * optional number is left blank.
+ */
 export type RegisterIndividualPayload = {
   role: 'individual';
   firstName: string;
   lastName: string;
   email: string;
   password: string;
-  phone?: string;
+  phoneNumber?: string;
   location?: string;
 };
 
+/** `industry` is optional at register time - the company setup wizard asks for it. */
 export type RegisterCompanyPayload = {
   role: 'company';
   email: string;
   password: string;
   companyName: string;
-  industry: string;
+  industry?: string;
   description?: string;
-  phone?: string;
+  phoneNumber?: string;
   location?: string;
 };
 
 export type RegisterPayload = RegisterIndividualPayload | RegisterCompanyPayload;
 
-/** Built from a Clerk profile. `role` only matters when creating the account. */
+/**
+ * Built from a Clerk profile. `role` only matters when creating the account.
+ *
+ * NOTE: the web app does NOT use `authService.socialLogin` - a client-supplied
+ * email must never be trusted. `/sso-callback` posts to our own route handler
+ * `POST /api/auth/social-login`, which reads the Clerk user server-side. This
+ * type is kept because the backend endpoint still takes this shape.
+ */
 export type SocialLoginPayload = {
   email: string;
   firstName?: string;

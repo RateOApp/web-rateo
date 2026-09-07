@@ -1,15 +1,26 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { CompanySetup } from "@/components/setup/company-setup";
+import { IndividualSetup } from "@/components/setup/individual-setup";
+import { getCachedUser } from "@/lib/current-user";
 
 export const metadata: Metadata = {
   title: "Finish setting up",
 };
 
-export default function SetupPage() {
-  return (
-    <div>
-      <h1 className="text-xl font-semibold text-brand-900">Finish setting up</h1>
-      <p className="mt-1 text-sm text-muted-foreground">A few details and your account is ready.</p>
-      <p className="mt-6 text-sm text-muted-foreground">Setup wizard arrives in Phase 3.</p>
-    </div>
+/**
+ * Role-aware wizard entry point. The layout has already proved the user exists
+ * and still needs setup; `getCachedUser` is memoised per request, so reading it
+ * again here is free.
+ */
+export default async function SetupPage() {
+  const user = await getCachedUser();
+  if (!user) redirect("/login");
+
+  return user.role === "company" ? (
+    <CompanySetup user={user} />
+  ) : (
+    <IndividualSetup user={user} />
   );
 }
