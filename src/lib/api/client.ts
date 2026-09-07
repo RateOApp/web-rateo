@@ -28,6 +28,17 @@ const AUTH_ENDPOINTS =
 /** Guards against a burst of parallel 401s each firing a logout. */
 let sessionExpiredHandled = false;
 
+/**
+ * Fired when the backend locks a feature because the user has not completed
+ * this month's rating. `ParticipationLockProvider` listens for it and opens
+ * the unlock dialog, wherever in the app the call came from.
+ */
+export const PARTICIPATION_OVERDUE_EVENT = 'rateo:participation-overdue';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 function requestPath(error: AxiosError): string {
   const raw = error.config?.url ?? '';
   return raw.startsWith('/') ? raw : `/${raw}`;
@@ -39,6 +50,16 @@ api.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
+    const data = error.response?.data;
+    if (
+      error.response?.status === 403 &&
+      isRecord(data) &&
+      data.code === 'PARTICIPATION_OVERDUE' &&
+      typeof window !== 'undefined'
+    ) {
+      window.dispatchEvent(new CustomEvent(PARTICIPATION_OVERDUE_EVENT));
+    }
+
     if (error.response?.status === 401 && !AUTH_ENDPOINTS.test(requestPath(error))) {
       if (!sessionExpiredHandled) {
         sessionExpiredHandled = true;

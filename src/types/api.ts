@@ -16,7 +16,8 @@ export type KycStatus = 'none' | 'pending' | 'verified' | 'rejected';
 /** Normalised `user.kyc.status` returned by `GET /users/:id`. */
 export type PublicKycStatus = 'approved' | 'pending' | 'rejected' | 'unverified';
 
-export type ParticipationStatus = 'good' | 'warning' | 'overdue' | 'locked' | (string & {});
+/** Participation state machine (server participationService). */
+export type ParticipationStatus = 'not_established' | 'current' | 'grace' | 'overdue';
 
 export type ApiMessage = { message: string };
 

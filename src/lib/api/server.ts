@@ -71,16 +71,23 @@ export async function serverFetch<T>(path: string, init: ServerFetchInit = {}): 
 /**
  * The signed-in user, from the session cookie.
  *
- * Returns `null` when there is no cookie, and also when the backend rejects the
- * token (401) or the account is suspended / gated (403) - callers render the
- * signed-out branch instead of an error page. Anything else is rethrown.
+ * Uses `GET auth/verify-token`, NOT `auth/profile`: only verify-token returns
+ * the full user document (`kycStatus`, `experience`, `jobPreferences`,
+ * `savedJobs`, `participation*`), which the dashboard gates depend on.
+ *
+ * Returns `null` when there is no cookie, when the backend answers
+ * `{ valid: false }`, and when it rejects the token (401) or the account is
+ * suspended / gated (403) - callers render the signed-out branch instead of an
+ * error page. Anything else is rethrown.
  */
 export async function getCurrentUser(): Promise<User | null> {
   const token = (await cookies()).get(COOKIE_TOKEN)?.value;
   if (!token) return null;
 
   try {
-    return await serverFetch<User>('auth/profile');
+    const data = await serverFetch<{ valid: boolean; user?: User }>('auth/verify-token');
+    if (!data?.valid || !data.user) return null;
+    return data.user;
   } catch (err) {
     if (err instanceof ApiError && (err.status === 401 || err.status === 403)) return null;
     throw err;

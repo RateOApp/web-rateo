@@ -3,10 +3,12 @@ import { jobListQuery, type JobListParams } from '@/services/params';
 import type {
   AnyJob,
   ApiMessage,
+  Job,
   JobApplication,
   JobCategoriesResponse,
   JobsResponse,
 } from '@/types/api';
+import type { AppliedJobsResponse, SavedJobsResponse } from '@/types/dashboard';
 
 export type { JobListParams } from '@/services/params';
 
@@ -17,6 +19,15 @@ export type { JobListParams } from '@/services/params';
 export const jobsService = {
   list(params: JobListParams = {}): Promise<JobsResponse> {
     return api.get<JobsResponse>('/jobs', { params: jobListQuery(params) }).then((r) => r.data);
+  },
+
+  /**
+   * The personalised home feed. Deliberately sends NO `categories` param: the
+   * backend then filters by the signed-in individual's `jobPreferences` and
+   * echoes the industries it applied back in `categories`.
+   */
+  feed(): Promise<JobsResponse> {
+    return api.get<JobsResponse>('/jobs').then((r) => r.data);
   },
 
   categories(): Promise<JobCategoriesResponse> {
@@ -50,16 +61,23 @@ export const jobsService = {
     return api.delete<ApiMessage>(`/jobs/${id}/save`).then((r) => r.data);
   },
 
-  saved(): Promise<AnyJob[]> {
-    return api
-      .get<{ savedJobs: AnyJob[] }>('/jobs/user/saved')
-      .then((r) => r.data?.savedJobs ?? []);
+  /** Saved jobs are always native jobs - imported listings cannot be saved. */
+  saved(): Promise<Job[]> {
+    return api.get<SavedJobsResponse>('/jobs/user/saved').then((r) => r.data?.savedJobs ?? []);
   },
 
   applied(): Promise<JobApplication[]> {
     return api
-      .get<{ applications: JobApplication[] }>('/jobs/user/applied')
+      .get<AppliedJobsResponse>('/jobs/user/applied')
       .then((r) => r.data?.applications ?? []);
+  },
+
+  /**
+   * "Not interested" - the job is added to `user.blockedJobs` and disappears
+   * from every list the server builds for this user.
+   */
+  block(id: string): Promise<ApiMessage> {
+    return api.post<ApiMessage>(`/users/jobs/${id}/block`).then((r) => r.data);
   },
 
   report(id: string, reason: string, details?: string): Promise<ApiMessage> {

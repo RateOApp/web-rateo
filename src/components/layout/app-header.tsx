@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Bell } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { AppNavLinks } from "@/components/layout/nav-links";
 import { UserMenu } from "@/components/layout/user-menu";
 import type { User } from "@/types/api";
@@ -23,13 +23,7 @@ export function AppHeader({ user }: { user: User }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          <Link
-            href="/dashboard/notifications"
-            aria-label="Notifications"
-            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-brand-900 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            <Bell aria-hidden="true" className="size-5" />
-          </Link>
+          <NotificationBell />
           <UserMenu user={user} />
         </div>
       </div>

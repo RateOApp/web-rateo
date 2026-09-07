@@ -1,22 +1,26 @@
 import type { Metadata } from "next";
-import { Bookmark } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
-import { EmptyState } from "@/components/shared/empty-state";
+import { SavedTabs, parseSavedTab } from "@/components/saved/saved-tabs";
 
 export const metadata: Metadata = {
-  title: "Saved jobs",
+  title: "Saved",
 };
 
-export default function SavedJobsPage() {
+export default async function SavedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+
   return (
     <PageContainer>
-      <PageHeader title="Saved jobs" description="Roles you liked and want to come back to." />
-      <EmptyState
-        icon={Bookmark}
-        title="Saved jobs"
-        description="Coming in Phase 4."
+      <PageHeader
+        title="Saved"
+        description="Applications you have sent and roles you want to come back to."
       />
+      <SavedTabs initialTab={parseSavedTab(tab)} />
     </PageContainer>
   );
 }

@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, Check, Loader2, Send, ShieldCheck } from "lucide-react";
+import { Bookmark, BookmarkCheck, Check, Loader2, Send } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  useKycGate,
+  useParticipationLock,
+} from "@/components/dashboard/dashboard-providers";
+import { JobMenu } from "@/components/jobs/job-menu";
 import { ShareButton } from "@/components/shared/share-button";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { APPLIED_JOBS_KEY, useAppliedJobs } from "@/hooks/use-applied-jobs";
+import { SAVED_JOBS_KEY, useSavedJobs } from "@/hooks/use-saved-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { isDeadlinePast } from "@/lib/format";
 import type { Role } from "@/lib/session";
@@ -25,7 +25,7 @@ type Viewer = { authenticated: boolean; role: Role | null };
 type JobActionsProps = {
   job: AnyJob;
   viewer: Viewer;
-  /** Best-effort seeds; the API response is what actually settles the state. */
+  /** Best-effort seeds; the cached queries and the API settle the real state. */
   initialApplied?: boolean;
   initialSaved?: boolean;
 };
@@ -41,6 +41,11 @@ function statusOf(error: unknown): number | undefined {
 /**
  * The only interactive part of the job detail page. Everything around it stays
  * server-rendered.
+ *
+ * NOTE: this component also renders on the PUBLIC job page, where the
+ * dashboard providers are not mounted. `useKycGate` / `useParticipationLock`
+ * degrade to self-contained dialogs there (see `dashboard-providers.tsx`), so
+ * both `kyc.fallback` and `lock.fallback` must be rendered.
  */
 export function JobActions({
   job,
@@ -48,17 +53,31 @@ export function JobActions({
   initialApplied = false,
   initialSaved = false,
 }: JobActionsProps) {
-  const [applied, setApplied] = useState(initialApplied);
-  const [saved, setSaved] = useState(initialSaved);
+  const queryClient = useQueryClient();
+  const kyc = useKycGate();
+  const lock = useParticipationLock();
+
+  const isIndividual = viewer.authenticated && viewer.role !== "company";
+  const savedJobs = useSavedJobs(isIndividual);
+  const appliedJobs = useAppliedJobs(isIndividual);
+
+  const [appliedLocal, setAppliedLocal] = useState(false);
+  const [savedLocal, setSavedLocal] = useState(false);
   const [interested, setInterested] = useState(false);
   const [pending, setPending] = useState<"apply" | "save" | "interest" | null>(null);
-  const [kycOpen, setKycOpen] = useState(false);
 
   const imported = isImportedJob(job);
   const expired = isDeadlinePast(job.deadline);
   const closed = !imported && job.status === "closed";
   const shut = closed || expired;
   const shutReason = closed ? "This role has been closed" : "The deadline has passed";
+
+  const applied =
+    initialApplied ||
+    appliedLocal ||
+    Boolean(appliedJobs.data?.some((entry) => entry.job?._id === job._id));
+  const saved =
+    initialSaved || savedLocal || Boolean(savedJobs.data?.some((entry) => entry._id === job._id));
 
   const jobPath = `/jobs/${job._id}`;
   const shareTitle = job.title?.trim() || "Job on Rate'O";
@@ -79,13 +98,15 @@ export function JobActions({
 
       if (status === 403 && /kyc|verif/i.test(message)) {
         // The backend gates apply/save behind approved KYC.
-        setKycOpen(true);
+        kyc.open();
       } else if (status === 400 && /already/i.test(message)) {
         // "You have already applied for this job" / "already saved".
-        if (kind === "apply") setApplied(true);
-        if (kind === "save") setSaved(true);
+        if (kind === "apply") setAppliedLocal(true);
+        if (kind === "save") setSavedLocal(true);
         toast.info(message);
-      } else {
+      } else if (status !== 403 || !/participation/i.test(message)) {
+        // A PARTICIPATION_OVERDUE 403 already opened the lock dialog through
+        // the axios interceptor - no toast on top of it.
         toast.error(message);
       }
     } finally {
@@ -124,6 +145,56 @@ export function JobActions({
 
   /* ---- individual ------------------------------------------------------ */
 
+  function handleApply() {
+    // Pre-empt the two server-side gates so the user gets the right dialog
+    // instead of a bare 403.
+    if (lock.isOverdue) {
+      lock.open();
+      return;
+    }
+    if (!kyc.requireVerified()) return;
+
+    void run(
+      "apply",
+      () => jobsService.apply(job._id),
+      () => {
+        setAppliedLocal(true);
+        void queryClient.invalidateQueries({ queryKey: APPLIED_JOBS_KEY });
+        toast.success("Application submitted");
+      },
+    );
+  }
+
+  function handleSave() {
+    if (!kyc.requireVerified()) return;
+
+    void run(
+      "save",
+      () => jobsService.save(job._id),
+      () => {
+        setSavedLocal(true);
+        void queryClient.invalidateQueries({ queryKey: SAVED_JOBS_KEY });
+        toast.success("Job saved");
+      },
+    );
+  }
+
+  function handleInterest() {
+    if (lock.isOverdue) {
+      lock.open();
+      return;
+    }
+
+    void run(
+      "interest",
+      () => jobsService.expressInterest(job._id),
+      () => {
+        setInterested(true);
+        toast.success("Interest registered — we'll notify you if the employer joins");
+      },
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col gap-2">
@@ -132,16 +203,7 @@ export function JobActions({
             size="lg"
             className="h-11 w-full bg-brand-700 text-white"
             disabled={interested || pending !== null}
-            onClick={() =>
-              void run(
-                "interest",
-                () => jobsService.expressInterest(job._id),
-                () => {
-                  setInterested(true);
-                  toast.success("Interest registered. We will let you know if the employer joins.");
-                },
-              )
-            }
+            onClick={handleInterest}
           >
             {pending === "interest" ? (
               <Loader2 aria-hidden="true" className="animate-spin" />
@@ -150,89 +212,60 @@ export function JobActions({
             ) : (
               <Send aria-hidden="true" />
             )}
-            {interested ? "Interest registered" : "Show interest"}
+            {interested ? "Interest registered ✓" : "Show interest"}
           </Button>
         ) : (
-          <Button
-            size="lg"
-            className="h-11 w-full bg-brand-700 text-white"
-            disabled={applied || shut || pending !== null}
-            onClick={() =>
-              void run(
-                "apply",
-                () => jobsService.apply(job._id),
-                () => {
-                  setApplied(true);
-                  toast.success("Application submitted");
-                },
-              )
-            }
-          >
-            {pending === "apply" ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
-            ) : applied ? (
-              <Check aria-hidden="true" />
-            ) : null}
-            {shut ? "Applications closed" : applied ? "Applied" : "Apply now"}
-          </Button>
-        )}
+          <>
+            <div className="flex items-center gap-2">
+              <Button
+                size="lg"
+                className="h-11 flex-1 bg-brand-700 text-white"
+                disabled={applied || shut || pending !== null}
+                onClick={handleApply}
+              >
+                {pending === "apply" ? (
+                  <Loader2 aria-hidden="true" className="animate-spin" />
+                ) : applied ? (
+                  <Check aria-hidden="true" />
+                ) : null}
+                {shut ? "Application Closed" : applied ? "Applied" : "Apply now"}
+              </Button>
+              <JobMenu jobId={job._id} />
+            </div>
 
-        {shut && !imported ? <p className="text-xs text-muted-foreground">{shutReason}.</p> : null}
+            {shut ? <p className="text-xs text-muted-foreground">{shutReason}.</p> : null}
 
-        {imported ? null : (
-          <Button
-            variant="outline"
-            size="lg"
-            className="h-11 w-full"
-            aria-pressed={saved}
-            disabled={pending !== null}
-            onClick={() =>
-              void run(
-                "save",
-                () => (saved ? jobsService.unsave(job._id) : jobsService.save(job._id)),
-                () => {
-                  setSaved((previous) => !previous);
-                  toast.success(saved ? "Removed from saved" : "Saved");
-                },
-              )
-            }
-          >
-            {pending === "save" ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
-            ) : saved ? (
-              <BookmarkCheck aria-hidden="true" />
-            ) : (
-              <Bookmark aria-hidden="true" />
+            {saved ? null : (
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-11 w-full"
+                disabled={pending !== null}
+                onClick={handleSave}
+              >
+                {pending === "save" ? (
+                  <Loader2 aria-hidden="true" className="animate-spin" />
+                ) : (
+                  <Bookmark aria-hidden="true" />
+                )}
+                Save for later
+              </Button>
             )}
-            {saved ? "Saved" : "Save"}
-          </Button>
+
+            {saved ? (
+              <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-success">
+                <BookmarkCheck aria-hidden="true" className="size-4" />
+                Saved
+              </p>
+            ) : null}
+          </>
         )}
 
         <ShareButton path={jobPath} title={shareTitle} className="h-11 w-full" />
       </div>
 
-      <Dialog open={kycOpen} onOpenChange={setKycOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck aria-hidden="true" className="size-5 text-brand-700" />
-              Verify your identity to apply
-            </DialogTitle>
-            <DialogDescription>
-              Rate&rsquo;O verifies everyone who applies for a role, so employers know who they are
-              hiring. It only takes a couple of minutes.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" size="lg" onClick={() => setKycOpen(false)}>
-              Not now
-            </Button>
-            <Button asChild size="lg" className="bg-brand-700 text-white">
-              <Link href="/dashboard/kyc">Start verification</Link>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {kyc.fallback}
+      {lock.fallback}
     </>
   );
 }
