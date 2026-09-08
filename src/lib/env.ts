@@ -22,6 +22,24 @@ export function getApiBaseUrl(): string {
 }
 
 /**
+ * Socket.IO origin, e.g. `https://api-prod.rateo.ng` (no `/api` suffix -
+ * Socket.IO is mounted at the server root, on the default `/socket.io/` path).
+ *
+ * Server-only, exactly like `API_BASE_URL`: it is read by the
+ * `GET /api/auth/socket` route handler, which hands the URL to the browser
+ * together with a short-lived ticket. Do NOT prefix it with `NEXT_PUBLIC_`.
+ *
+ * Defaults to `API_BASE_URL` with the trailing `/api` removed, which is right
+ * for every current deployment; set `SOCKET_URL` only when the realtime server
+ * lives somewhere else.
+ */
+export function getSocketUrl(): string {
+  const raw = process.env.SOCKET_URL;
+  if (raw && raw.trim()) return raw.trim().replace(/\/+$/, '');
+  return getApiBaseUrl().replace(/\/api\/?$/, '');
+}
+
+/**
  * Public origin this app is served from, without a trailing slash.
  * Falls back to `http://localhost:3000` so dev works with no env file.
  */

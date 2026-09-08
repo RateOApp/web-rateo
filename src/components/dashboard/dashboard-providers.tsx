@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { KycRequiredDialog } from "@/components/dashboard/kyc-required-dialog";
+import { SocketProvider } from "@/components/dashboard/socket-provider";
 import { ParticipationLockDialog } from "@/components/dashboard/participation-lock-dialog";
 import { useMe } from "@/hooks/use-me";
 import { useParticipationStatus } from "@/hooks/use-participation";
@@ -165,11 +166,19 @@ export function useParticipationLock(): ParticipationLock {
 
 /* -------------------------------------------------------------------------- */
 
-/** Mounted once by the dashboard layout, inside `<UserProvider>`. */
+/**
+ * Mounted once by the dashboard layout, inside `<UserProvider>`.
+ *
+ * `SocketProvider` sits inside the KYC gate so its global listeners can reuse
+ * the same `useMe()` cache, and outside the participation lock so a socket
+ * event can never be swallowed by a dialog boundary.
+ */
 export function DashboardProviders({ children }: { children: React.ReactNode }) {
   return (
     <KycGateProvider>
-      <ParticipationLockProvider>{children}</ParticipationLockProvider>
+      <SocketProvider>
+        <ParticipationLockProvider>{children}</ParticipationLockProvider>
+      </SocketProvider>
     </KycGateProvider>
   );
 }

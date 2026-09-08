@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink, MapPin, Star } from "lucide-react";
+import { ExternalLink, MapPin, MessageCircle, Star } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { RatingSummary } from "@/components/companies/rating-summary";
 import { ReviewList } from "@/components/companies/review-list";
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/errors";
 import { excerpt, formatPublicId, isObjectId } from "@/lib/format";
 import { kycBadgeStatus, participationLabel } from "@/lib/rating";
-import { getServerSession } from "@/lib/session";
+import { getCachedUser } from "@/lib/current-user";
 import { companiesServer } from "@/services/companies.server";
 import type { Review, User } from "@/types/api";
 
@@ -77,10 +77,12 @@ export default async function CompanyDetailPage({
   const { id } = await params;
   if (!isObjectId(id)) notFound();
 
-  const [company, reviews, session] = await Promise.all([
+  const [company, reviews, viewer] = await Promise.all([
     loadCompany(id),
     companiesServer.reviews(id, PUBLIC_FETCH).catch((): Review[] => []),
-    getServerSession(),
+    // The full user, not just the cookie: the Message shortcut is only offered
+    // to a KYC-verified individual, and `kycStatus` lives on the document.
+    getCachedUser(),
   ]);
 
   const name = company.companyName?.trim() || "Unnamed company";
@@ -143,19 +145,29 @@ export default async function CompanyDetailPage({
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            {session === null ? (
+            {viewer === null ? (
               <Button asChild size="lg" className="h-10 bg-brand-700 text-white">
                 <Link href={`/login?next=${encodeURIComponent(companyPath)}`}>
                   Log in to rate this company
                 </Link>
               </Button>
-            ) : session.role === "individual" ? (
-              <Button asChild size="lg" className="h-10 bg-brand-700 text-white">
-                <Link href="/dashboard/ratings">
-                  <Star aria-hidden="true" />
-                  Rate this company
-                </Link>
-              </Button>
+            ) : viewer.role === "individual" ? (
+              <>
+                <Button asChild size="lg" className="h-10 bg-brand-700 text-white">
+                  <Link href="/dashboard/ratings">
+                    <Star aria-hidden="true" />
+                    Rate this company
+                  </Link>
+                </Button>
+                {viewer.kycStatus === "verified" ? (
+                  <Button asChild variant="outline" size="lg" className="h-10">
+                    <Link href={`/dashboard/messages/${id}`}>
+                      <MessageCircle aria-hidden="true" />
+                      Message
+                    </Link>
+                  </Button>
+                ) : null}
+              </>
             ) : null}
             <ShareButton path={companyPath} title={name} className="h-10" />
           </div>

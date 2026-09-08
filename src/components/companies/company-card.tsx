@@ -12,8 +12,19 @@ import type { User } from "@/types/api";
  * One row in the company directory. Renders only public fields - the listing
  * endpoint also returns email, phone, kycDocuments and verification codes,
  * which must never reach the page.
+ *
+ * `footer` is the slot the dashboard uses for its **Message** shortcut; the
+ * public directory passes nothing and the card renders exactly as before.
  */
-export function CompanyCard({ company, className }: { company: User; className?: string }) {
+export function CompanyCard({
+  company,
+  className,
+  footer,
+}: {
+  company: User;
+  className?: string;
+  footer?: React.ReactNode;
+}) {
   const name = company.companyName?.trim() || "Unnamed company";
   const rating = company.overallRating ?? 0;
   const participation = participationLabel(company.participationStatus);
@@ -67,6 +78,8 @@ export function CompanyCard({ company, className }: { company: User; className?:
           </div>
         </div>
       </div>
+
+      {footer ? <div className="mt-3 flex flex-wrap justify-end gap-2">{footer}</div> : null}
     </article>
   );
 }

@@ -60,7 +60,7 @@ export function CompanyExplore({
 
   function handleMessage(candidate: Candidate) {
     kyc.requireVerified(() =>
-      router.push(`/dashboard/messages?user=${encodeURIComponent(candidate._id)}`),
+      router.push(`/dashboard/messages/${candidate._id}`),
     );
   }
 

@@ -16,8 +16,10 @@ export function useSupportTickets(enabled = true) {
 }
 
 /**
- * One ticket, polled every 15 s so admin replies land without a refresh.
- * Sockets take over in Phase 6.
+ * One ticket. No polling: `TicketThread` subscribes to
+ * `problem_report_message` / `problem_report_status_updated` and writes admin
+ * replies straight into this cache entry, so a refetch only happens when the
+ * status changes or the socket sent an event with no body.
  */
 export function useSupportTicket(id: string | null | undefined) {
   return useQuery({
@@ -25,7 +27,6 @@ export function useSupportTicket(id: string | null | undefined) {
     queryFn: () => supportService.byId(id as string),
     enabled: Boolean(id),
     staleTime: 0,
-    refetchInterval: 15_000,
   });
 }
 

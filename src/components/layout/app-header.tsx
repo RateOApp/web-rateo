@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
+import { MessagesIcon } from "@/components/layout/messages-icon";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { AppNavLinks } from "@/components/layout/nav-links";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -23,6 +24,7 @@ export function AppHeader({ user }: { user: User }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <MessagesIcon />
           <NotificationBell />
           <UserMenu user={user} />
         </div>

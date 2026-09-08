@@ -54,7 +54,7 @@ export function TalentActions({
 
   function handleMessage() {
     kyc.requireVerified(() =>
-      router.push(`/dashboard/messages?user=${encodeURIComponent(candidateId)}`),
+      router.push(`/dashboard/messages/${candidateId}`),
     );
   }
 

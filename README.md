@@ -38,11 +38,12 @@ npx tsc --noEmit
 | Variable | Scope | Required | Value |
 |---|---|---|---|
 | `API_BASE_URL` | **server only** | yes | Backend REST base including `/api`, e.g. `https://api-prod.rateo.ng/api` |
+| `SOCKET_URL` | **server only** | no (defaults to `API_BASE_URL` minus the trailing `/api`) | Socket.IO origin, e.g. `https://api-prod.rateo.ng`. Only `GET /api/auth/socket` reads it; the browser gets the URL from that route, never from a bundled variable |
 | `NEXT_PUBLIC_APP_URL` | public | no (defaults to `http://localhost:3000`) | This app's own origin — `https://app.rateo.ng` in prod. Used for OG metadata, `robots.txt`, `sitemap.xml` |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | public | no | Clerk publishable key (same Clerk instance as the mobile app). Empty = no social sign-in |
 | `CLERK_SECRET_KEY` | **server only** | no | Clerk secret key. Needed together with the publishable key for the server-side exchange |
 
-Read them through `src/lib/env.ts` (`getApiBaseUrl()`, `getAppUrl()`) rather than
+Read them through `src/lib/env.ts` (`getApiBaseUrl()`, `getSocketUrl()`, `getAppUrl()`) rather than
 `process.env` — `getApiBaseUrl()` throws a clear error when the variable is missing and strips
 a trailing slash.
 
@@ -127,6 +128,7 @@ src/
     api/[...path]/route.ts      catch-all REST proxy -> API_BASE_URL
     api/auth/logout/route.ts    clears session cookies
     api/auth/session/route.ts   { authenticated, role } from cookies
+    api/auth/socket/route.ts    { url, ticket } for the realtime connection
     api/auth/social-login/      Clerk -> Rate'O session exchange (reads currentUser())
     robots.ts, sitemap.ts
     (public) (auth) (dashboard) route groups + pages
@@ -180,6 +182,8 @@ route handlers and `sitemap.ts`.
   - `NEXT_PUBLIC_APP_URL = https://app.rateo.ng` (use the preview URL for Preview if OG links
     matter there).
   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` from Phase 3 onward.
+  - `SOCKET_URL = https://api-prod.rateo.ng` — optional (it defaults to `API_BASE_URL` with
+    the trailing `/api` stripped) and, like `API_BASE_URL`, **not** prefixed `NEXT_PUBLIC_`.
 - Domain: add `app.rateo.ng` in Vercel and point the DNS `CNAME` at Vercel. Keep `rateo.ng` on
   Framer; add Framer redirects for `rateo.ng/login`, `rateo.ng/jobs/:id` and
   `rateo.ng/companies/:id` to the matching `app.rateo.ng` path.

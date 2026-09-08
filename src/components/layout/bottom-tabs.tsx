@@ -6,13 +6,22 @@ import { isActive, tabsForRole } from "@/lib/nav";
 import type { Role } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
+/** `/dashboard/messages/<id>` - the thread, which owns the whole viewport. */
+const THREAD_ROUTE = /^\/dashboard\/messages\/[^/]+$/;
+
 /**
  * Dashboard bottom tab bar (< md). 64px tall — the dashboard <main> adds
  * matching bottom padding so content never hides behind it.
+ *
+ * The one exception is a message thread: on mobile it fills the viewport and
+ * renders its own composer at the bottom, so the tab bar would sit on top of
+ * the send button. The thread cancels the <main> padding itself.
  */
 export function BottomTabs({ role }: { role: Role | null }) {
   const pathname = usePathname();
   const tabs = tabsForRole(role);
+
+  if (THREAD_ROUTE.test(pathname)) return null;
 
   return (
     <nav

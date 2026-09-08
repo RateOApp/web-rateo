@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, MoreHorizontal, Star, Undo2, XCircle } from 'lucide-react';
+import { Loader2, MessageCircle, MoreHorizontal, Star, Undo2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useKycGate } from '@/components/dashboard/dashboard-providers';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -44,6 +45,7 @@ type EmployeeMenuProps = {
 export function EmployeeMenu({ employee, onEndContract }: EmployeeMenuProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const kyc = useKycGate();
   const [withdrawing, setWithdrawing] = useState(false);
 
   const canWithdraw = employee.notice?.givenBy === 'company';
@@ -86,6 +88,7 @@ export function EmployeeMenu({ employee, onEndContract }: EmployeeMenuProps) {
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -104,6 +107,15 @@ export function EmployeeMenu({ employee, onEndContract }: EmployeeMenuProps) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem
+          onSelect={() =>
+            kyc.requireVerified(() => router.push(`/dashboard/messages/${employee.id}`))
+          }
+        >
+          <MessageCircle aria-hidden="true" />
+          Message
+        </DropdownMenuItem>
+
         <DropdownMenuItem onSelect={handleRate}>
           <Star aria-hidden="true" />
           Rate now
@@ -122,5 +134,7 @@ export function EmployeeMenu({ employee, onEndContract }: EmployeeMenuProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    {kyc.fallback}
+    </>
   );
 }

@@ -5,7 +5,7 @@ import { Briefcase, ChevronRight, Loader2, Search } from "lucide-react";
 import { VerificationGate } from "@/components/dashboard/verification-card";
 import { CompanySearch } from "@/components/explore/company-search";
 import { TopRatedCompanies } from "@/components/explore/top-rated-companies";
-import { CompanyCard } from "@/components/companies/company-card";
+import { ExploreCompanyCard } from "@/components/explore/explore-company-card";
 import { PageContainer } from "@/components/layout/page-container";
 import { CardListSkeleton } from "@/components/shared/card-list-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -73,7 +73,7 @@ export function ExploreIndividual({
               <ul className="flex flex-col gap-3">
                 {list.map((company) => (
                   <li key={company._id}>
-                    <CompanyCard company={company} />
+                    <ExploreCompanyCard company={company} verified={verified} />
                   </li>
                 ))}
               </ul>
@@ -100,7 +100,7 @@ export function ExploreIndividual({
                 <ul className="flex flex-col gap-3">
                   {list.map((company) => (
                     <li key={company._id}>
-                      <CompanyCard company={company} />
+                      <ExploreCompanyCard company={company} verified={verified} />
                     </li>
                   ))}
                 </ul>
