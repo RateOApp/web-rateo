@@ -21,12 +21,36 @@ function wordCount(text: string): number {
   return trimmed ? trimmed.split(/\s+/).length : 0;
 }
 
-/** 100-word bio editor. Individuals store it in `bio` (companies use `description`). */
-export function BioForm({ user }: { user: User }) {
+type BioField = 'bio' | 'description';
+
+const COPY: Record<BioField, { placeholder: string; toast: string; label: string }> = {
+  bio: {
+    placeholder: 'Write something about yourself...',
+    toast: 'Bio updated successfully',
+    label: 'Bio',
+  },
+  description: {
+    placeholder: 'Write something about your company...',
+    toast: 'About updated successfully',
+    label: 'About your company',
+  },
+};
+
+/**
+ * The 100-word "about" editor, shared by both roles.
+ *
+ * The two roles write DIFFERENT columns: individuals have `bio`, companies have
+ * `description` (which is what candidates read on the public company page).
+ * Sending the wrong one silently writes a field nothing renders, so the field
+ * is an explicit prop rather than inferred from `user.role` - the caller is the
+ * route branch and already knows.
+ */
+export function BioForm({ user, field = 'bio' }: { user: User; field?: BioField }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [bio, setBio] = useState(user.bio ?? '');
+  const copy = COPY[field];
+  const [bio, setBio] = useState((field === 'bio' ? user.bio : user.description) ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,13 +64,13 @@ export function BioForm({ user }: { user: User }) {
     setError(null);
     setSaving(true);
     try {
-      await usersService.updateProfile({ bio });
+      await usersService.updateProfile({ [field]: bio });
       await queryClient.invalidateQueries({ queryKey: ['me'] });
       router.refresh();
-      toast.success('Bio updated successfully');
+      toast.success(copy.toast);
       router.push('/dashboard/profile');
     } catch (caught) {
-      setError(getApiErrorMessage(caught, 'Failed to update your bio'));
+      setError(getApiErrorMessage(caught, `Failed to update your ${field}`));
     } finally {
       setSaving(false);
     }
@@ -62,9 +86,9 @@ export function BioForm({ user }: { user: User }) {
         value={bio}
         rows={8}
         disabled={saving}
-        aria-label="Bio"
+        aria-label={copy.label}
         aria-invalid={overLimit || undefined}
-        placeholder="Write something about yourself..."
+        placeholder={copy.placeholder}
         onChange={(event) => setBio(event.target.value)}
         className="min-h-40 rounded-xl"
       />

@@ -8,7 +8,20 @@ import type {
   JobCategoriesResponse,
   JobsResponse,
 } from '@/types/api';
+import type {
+  ApplicantStatus,
+  JobApplicantRow,
+  JobPayload,
+  MyJobsResponse,
+} from '@/types/company-jobs';
 import type { AppliedJobsResponse, SavedJobsResponse } from '@/types/dashboard';
+
+/** `GET /jobs/company/myjobs` returns a bare array; some builds wrap it. */
+function normaliseMyJobs(data: MyJobsResponse | null | undefined): Job[] {
+  if (Array.isArray(data)) return data as Job[];
+  const wrapped = data && typeof data === 'object' ? (data as { jobs?: unknown }).jobs : null;
+  return Array.isArray(wrapped) ? (wrapped as Job[]) : [];
+}
 
 export type { JobListParams } from '@/services/params';
 
@@ -87,5 +100,52 @@ export const jobsService = {
   /** Imported (scraped) jobs have no company account; interest is the CTA. */
   expressInterest(id: string): Promise<ApiMessage> {
     return api.post<ApiMessage>(`/imported-jobs/${id}/interest`).then((r) => r.data);
+  },
+
+  /* ---- company-side (owner only) --------------------------------------- */
+
+  /**
+   * `POST /jobs`. Companies only; `category` must be a canonical industry and
+   * the call 403s with `PARTICIPATION_OVERDUE` while a rating is outstanding.
+   */
+  create(payload: JobPayload): Promise<Job> {
+    return api.post<Job>('/jobs', payload).then((r) => r.data);
+  },
+
+  /** `PUT /jobs/:id`. Partial - the controller keeps whatever it is not sent. */
+  update(id: string, payload: Partial<JobPayload>): Promise<Job> {
+    return api.put<Job>(`/jobs/${id}`, payload).then((r) => r.data);
+  },
+
+  remove(id: string): Promise<ApiMessage> {
+    return api.delete<ApiMessage>(`/jobs/${id}`).then((r) => r.data);
+  },
+
+  /** Every job this company has posted, newest first. */
+  myJobs(): Promise<Job[]> {
+    return api
+      .get<MyJobsResponse>('/jobs/company/myjobs')
+      .then((r) => normaliseMyJobs(r.data));
+  },
+
+  applicants(id: string): Promise<JobApplicantRow[]> {
+    return api
+      .get<JobApplicantRow[]>(`/jobs/${id}/applicants`)
+      .then((r) => (Array.isArray(r.data) ? r.data : []));
+  },
+
+  /**
+   * `PUT /jobs/:id/applicants/:applicantId`. `applicantId` is the APPLICANT'S
+   * USER ID, not the subdocument `_id`. Accepting converts the applicant into
+   * an employee server-side, which is why it is participation-locked.
+   */
+  updateApplicantStatus(
+    jobId: string,
+    applicantId: string,
+    status: ApplicantStatus,
+  ): Promise<ApiMessage> {
+    return api
+      .put<ApiMessage>(`/jobs/${jobId}/applicants/${applicantId}`, { status })
+      .then((r) => r.data);
   },
 };

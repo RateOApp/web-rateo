@@ -1,4 +1,11 @@
 import { api } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/errors';
+import { ATTESTATION_REQUIRED, ATTESTER_SELFIE_REQUIRED } from '@/types/company';
+import type {
+  AttestationPayload,
+  AttestationResponse,
+  BusinessKycPayload,
+} from '@/types/company';
 import type {
   DojahInitResponse,
   DojahStatusResponse,
@@ -7,7 +14,7 @@ import type {
 } from '@/types/profile';
 
 /**
- * KYC for individuals.
+ * KYC for individuals and companies.
  *
  * Two paths, both ending server-side:
  * - manual (`submitManual`) flips `kycStatus` to `pending` and notifies admins;
@@ -37,7 +44,60 @@ export const kycService = {
   dojahCancel(): Promise<DojahStatusResponse> {
     return api.post<DojahStatusResponse>('/users/kyc/dojah/cancel').then((r) => r.data);
   },
+
+  /* ---- business (company) KYC ------------------------------------------ */
+
+  /**
+   * `POST /users/kyc/attestation` - who is verifying on the company's behalf.
+   *
+   * The backend blocks BOTH business paths (Dojah `init` and the manual submit)
+   * with `400 ATTESTATION_REQUIRED` until this is stored, so it is a gate, not
+   * a formality. It is rewritten on every fresh attempt, which is why the flow
+   * may re-ask for it after a rejection.
+   */
+  submitAttestation(payload: AttestationPayload): Promise<AttestationResponse> {
+    return api
+      .post<AttestationResponse>('/users/kyc/attestation', payload)
+      .then((r) => r.data);
+  },
+
+  /**
+   * `POST /users/kyc` for a company (team review). Same endpoint as the
+   * individual path - the controller branches on `user.role` and merges the
+   * body into `kycDocuments`, so the field names here ARE the contract with the
+   * admin review screen. Every document must already be a hosted URL.
+   */
+  submitBusinessManual(payload: BusinessKycPayload): Promise<KycSubmitResponse> {
+    return api.post<KycSubmitResponse>('/users/kyc', payload).then((r) => r.data);
+  },
 };
+
+/** Axios does not narrow its errors, so read the backend `code` defensively. */
+function errorCode(error: unknown): string | null {
+  if (error instanceof ApiError) return error.code ?? null;
+  if (typeof error !== 'object' || error === null) return null;
+  const response = (error as { response?: { data?: unknown } }).response;
+  const data = response?.data;
+  if (typeof data !== 'object' || data === null) return null;
+  const code = (data as Record<string, unknown>).code;
+  return typeof code === 'string' ? code : null;
+}
+
+/**
+ * "The company has not accepted the authorization declaration yet."
+ *
+ * The user document may not carry `kycAttestation` at all (older accounts, and
+ * the field is absent from some projections), so the flow starts optimistically
+ * and treats this code as the authoritative answer.
+ */
+export function isAttestationRequired(error: unknown): boolean {
+  return errorCode(error) === ATTESTATION_REQUIRED;
+}
+
+/** The submitted business KYC carried no live selfie of the verifier. */
+export function isAttesterSelfieRequired(error: unknown): boolean {
+  return errorCode(error) === ATTESTER_SELFIE_REQUIRED;
+}
 
 /**
  * The reviewer's note on a rejected submission.

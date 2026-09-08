@@ -1,22 +1,21 @@
 import type { Metadata } from "next";
-import { Briefcase } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
-import { EmptyState } from "@/components/shared/empty-state";
+import { MyJobsList, PostJobButton } from "@/components/company/jobs/my-jobs-list";
 
 export const metadata: Metadata = {
-  title: "Job posts",
+  title: "My jobs",
 };
 
 export default function CompanyJobsPage() {
   return (
     <PageContainer>
-      <PageHeader title="Job posts" description="Manage the roles your company has posted." />
-      <EmptyState
-        icon={Briefcase}
-        title="Job posts"
-        description="Coming in Phase 5."
+      <PageHeader
+        title="My jobs"
+        description="Every role you have posted, and who has applied."
+        actions={<PostJobButton />}
       />
+      <MyJobsList />
     </PageContainer>
   );
 }

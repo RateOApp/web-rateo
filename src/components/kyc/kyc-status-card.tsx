@@ -9,6 +9,11 @@ type KycStatusCardProps = {
   status: Exclude<KycStatus, 'none'>;
   /** Reviewer note on a rejection, when there is one. */
   adminComment?: string | null;
+  /**
+   * Overrides the sub-line. Companies verify a business rather than a person,
+   * so their copy says so; everything else about the three states is identical.
+   */
+  description?: string;
   /** Rejected only: restart the flow in place. */
   onRetry?: () => void;
 };
@@ -17,7 +22,12 @@ type KycStatusCardProps = {
  * The three terminal KYC states. Anything else means "not submitted", which is
  * the intro's job rather than this card's.
  */
-export function KycStatusCard({ status, adminComment, onRetry }: KycStatusCardProps) {
+export function KycStatusCard({
+  status,
+  adminComment,
+  description,
+  onRetry,
+}: KycStatusCardProps) {
   if (status === 'verified') {
     return (
       <div className="flex flex-col items-center rounded-2xl border border-border bg-card px-6 py-10 text-center">
@@ -29,7 +39,7 @@ export function KycStatusCard({ status, adminComment, onRetry }: KycStatusCardPr
         </span>
         <p className="text-lg font-semibold text-brand-900">You are verified ✓</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Your account has already been verified — no need to submit KYC again.
+          {description ?? 'Your account has already been verified — no need to submit KYC again.'}
         </p>
       </div>
     );
@@ -45,7 +55,9 @@ export function KycStatusCard({ status, adminComment, onRetry }: KycStatusCardPr
           <Clock className="size-7" />
         </span>
         <p className="text-lg font-semibold text-brand-900">Verification pending</p>
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">This usually takes 24 hours</p>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          {description ?? 'This usually takes 24 hours'}
+        </p>
       </div>
     );
   }
@@ -65,7 +77,7 @@ export function KycStatusCard({ status, adminComment, onRetry }: KycStatusCardPr
         </p>
       ) : (
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Your documents were not approved. Please submit them again.
+          {description ?? 'Your documents were not approved. Please submit them again.'}
         </p>
       )}
       {onRetry ? (

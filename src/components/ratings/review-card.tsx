@@ -13,35 +13,89 @@ import type { ReviewItem } from "@/types/reviews";
 
 const EXCERPT_LENGTH = 150;
 
-/** Reviewer label used on the "My Rating" tab. */
-function reviewerName(review: ReviewItem): string {
+/**
+ * Whose reviews these are, which decides three things at once: what the heading
+ * says, what a sealed review is allowed to reveal, and which sentence explains
+ * the seal.
+ *
+ * - `about-me` — written about the signed-in individual. The employer's name is
+ *   the heading, and a sealed review still shows its stars: the score already
+ *   counts towards the average, only the words are held back.
+ * - `about-company` — the employer's public reviews, seen by an employee.
+ * - `about-my-company` — the company reading its OWN reviews. A sealed one
+ *   shows nothing at all: not the reviewer, not the stars. Staff write these
+ *   precisely because they stay anonymous until the contract ends, and a name
+ *   next to a lock icon would break that promise while looking like it kept it.
+ */
+type ReviewVariant = "about-me" | "about-company" | "about-my-company";
+
+const VARIANTS: Record<
+  ReviewVariant,
+  {
+    /** Heading source: the reviewer, or the review's own title. */
+    heading: "reviewer" | "title";
+    /** Name for a reviewer the payload did not populate. */
+    fallbackName: string;
+    /** Copy for a review by someone still employed. */
+    hiddenEmployeeCopy: string;
+    /** Whether a sealed review may still show its score. */
+    starsWhenHidden: boolean;
+    /** Heading for a sealed review; `null` keeps the normal one. */
+    hiddenHeading: string | null;
+  }
+> = {
+  "about-me": {
+    heading: "reviewer",
+    fallbackName: "Company",
+    hiddenEmployeeCopy: HIDDEN_CURRENT_EMPLOYEE,
+    starsWhenHidden: true,
+    hiddenHeading: null,
+  },
+  "about-company": {
+    heading: "title",
+    fallbackName: "Company",
+    hiddenEmployeeCopy: HIDDEN_STILL_EMPLOYED,
+    starsWhenHidden: false,
+    hiddenHeading: null,
+  },
+  "about-my-company": {
+    heading: "reviewer",
+    fallbackName: "User",
+    hiddenEmployeeCopy: HIDDEN_STILL_EMPLOYED,
+    starsWhenHidden: false,
+    hiddenHeading: "Review Hidden",
+  },
+};
+
+function reviewerName(review: ReviewItem, fallback: string): string {
   const reviewer = review.reviewer;
   const person = [reviewer?.firstName, reviewer?.lastName].filter(Boolean).join(" ").trim();
-  return reviewer?.companyName?.trim() || person || "Company";
+  return reviewer?.companyName?.trim() || person || fallback;
 }
 
 type ReviewCardProps = {
   review: ReviewItem;
-  /**
-   * `about-me` — written about the signed-in user (heading = the reviewer).
-   * `about-company` — written about their employer (heading = review title).
-   */
-  variant: "about-me" | "about-company";
+  variant: ReviewVariant;
   onOpen?: (review: ReviewItem) => void;
 };
 
 export function ReviewCard({ review, variant, onOpen }: ReviewCardProps) {
+  const config = VARIANTS[variant];
   const date = formatDate(review.createdAt);
   const { title } = splitComment(review.comment);
-  const heading = variant === "about-me" ? reviewerName(review) : title || "Review";
 
   const hiddenCopy = review.commentHidden
     ? HIDDEN_PARTICIPATION
     : review.isCurrentEmployee
-      ? variant === "about-me"
-        ? HIDDEN_CURRENT_EMPLOYEE
-        : HIDDEN_STILL_EMPLOYED
+      ? config.hiddenEmployeeCopy
       : null;
+
+  const heading =
+    hiddenCopy && config.hiddenHeading
+      ? config.hiddenHeading
+      : config.heading === "reviewer"
+        ? reviewerName(review, config.fallbackName)
+        : title || "Review";
 
   const comment = review.comment ?? "";
   const truncated = comment.length > EXCERPT_LENGTH;
@@ -53,9 +107,7 @@ export function ReviewCard({ review, variant, onOpen }: ReviewCardProps) {
         {date ? <span className="text-xs text-muted-foreground">{date}</span> : null}
       </div>
 
-      {/* Mobile keeps the stars visible on a hidden review when the card is
-          about the signed-in user; the company tab hides the whole row. */}
-      {variant === "about-me" || !hiddenCopy ? (
+      {!hiddenCopy || config.starsWhenHidden ? (
         <StarRating className="mt-2" value={review.rating ?? 0} size={18} />
       ) : null}
 
@@ -65,20 +117,18 @@ export function ReviewCard({ review, variant, onOpen }: ReviewCardProps) {
           {hiddenCopy}
         </p>
       ) : (
-        <>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {truncated ? `${comment.slice(0, EXCERPT_LENGTH)}…` : comment}
-            {truncated ? (
-              <button
-                type="button"
-                onClick={() => onOpen?.(review)}
-                className="ml-1 font-medium text-brand-700 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
-                Read more...
-              </button>
-            ) : null}
-          </p>
-        </>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {truncated ? `${comment.slice(0, EXCERPT_LENGTH)}…` : comment}
+          {truncated ? (
+            <button
+              type="button"
+              onClick={() => onOpen?.(review)}
+              className="ml-1 font-medium text-brand-700 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              Read more...
+            </button>
+          ) : null}
+        </p>
       )}
     </article>
   );

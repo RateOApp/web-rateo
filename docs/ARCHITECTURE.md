@@ -48,10 +48,14 @@ a 401 there clears cookies and redirects to `/login`; `setupCompleted === false`
 (auth)     /login, /register, /register/company, /forgot-password, /verify,
            /reset-password, /sso-callback
 (dashboard)/dashboard                     role-aware home
-           /dashboard/(individual)/...    saved, my-jobs, preferences, work-history, resume, kyc
-           /dashboard/(company)/...       jobs, jobs/new, jobs/[id]/applicants, candidates, employees
-           /dashboard/{explore,ratings,profile,notifications,settings,messages}  shared, role-aware
-           /setup                          wizard, role-aware
+           /dashboard/(individual)/...    saved, explore/jobs, preferences, work-history, resume,
+                                          request-company, profile/skills, ratings/rate
+           /dashboard/(company)/...       jobs, jobs/new, jobs/[id]/{edit,applicants}, candidates,
+                                          talent/[id], candidate-preferences, employees,
+                                          ratings/rate/[employeeId]
+           /dashboard/{explore,ratings,profile,profile/edit,profile/bio,kyc,kyc/dojah,
+                       notifications,settings,help,report,support/[id],messages}  shared, role-aware
+(setup)    /setup                          wizard, role-aware
 ```
 
 Nested route groups inside `dashboard/` give each role its own layout guard while keeping the

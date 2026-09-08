@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { getApiErrorMessage } from '@/lib/api/errors';
-import { dojahWidgetUrl, kycService } from '@/services/kyc';
+import { dojahWidgetUrl, isAttestationRequired, kycService } from '@/services/kyc';
 
 const SUCCESS_RE = /success|complete|approved|verified|finish/i;
 const CLOSE_RE = /close|cancel|exit|error/i;
@@ -41,13 +41,19 @@ function signalFrom(payload: unknown): string {
  *
  * TODO(dojah-sandbox): the hosted widget's postMessage contract is unconfirmed,
  * which is why the explicit "I've finished" / "Cancel" buttons exist.
+ *
+ * `flow` picks the Dojah product: `individual` (NIN + liveness) or `business`
+ * (CAC + director). The business flow is gated server-side on the authorization
+ * attestation, so `init` can answer 400 ATTESTATION_REQUIRED - that is not a
+ * failure, it means the company has to declare who is verifying first.
  */
-export function DojahWidget() {
+export function DojahWidget({ flow = 'individual' }: { flow?: 'individual' | 'business' }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [needsAttestation, setNeedsAttestation] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
   // One terminal action per visit: a postMessage and a button tap must not
@@ -58,7 +64,7 @@ export function DojahWidget() {
     let active = true;
 
     kycService
-      .dojahInit('individual')
+      .dojahInit(flow)
       .then((config) => {
         if (!active) return;
         const next = dojahWidgetUrl(config);
@@ -69,13 +75,15 @@ export function DojahWidget() {
         setUrl(next);
       })
       .catch((caught: unknown) => {
-        if (active) setError(getApiErrorMessage(caught, 'Could not start verification.'));
+        if (!active) return;
+        if (isAttestationRequired(caught)) setNeedsAttestation(true);
+        setError(getApiErrorMessage(caught, 'Could not start verification.'));
       });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [flow]);
 
   const finish = useCallback(async () => {
     if (settled.current) return;
@@ -131,7 +139,9 @@ export function DojahWidget() {
         <p className="text-lg font-semibold text-brand-900">Something went wrong</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">{error}</p>
         <Button asChild className="mt-6 h-11 bg-brand-700 text-white">
-          <Link href="/dashboard/kyc">Verify manually instead</Link>
+          <Link href="/dashboard/kyc">
+            {needsAttestation ? 'Complete the authorization' : 'Verify manually instead'}
+          </Link>
         </Button>
       </div>
     );

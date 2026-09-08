@@ -9,17 +9,28 @@ export const metadata: Metadata = {
   title: "Update bio",
 };
 
+/**
+ * Shared route. Same 100-word editor for both roles, but they write different
+ * columns: individuals `bio`, companies `description` (what candidates read on
+ * the public company page).
+ */
 export default async function EditBioPage() {
   const user = await getCachedUser();
   if (!user) redirect("/login");
 
+  const isCompany = user.role === "company";
+
   return (
     <PageContainer>
       <PageHeader
-        title="Update bio"
-        description="A short introduction, up to 100 words."
+        title={isCompany ? "About your company" : "Update bio"}
+        description={
+          isCompany
+            ? "What candidates read about you, up to 100 words."
+            : "A short introduction, up to 100 words."
+        }
       />
-      <BioForm user={user} />
+      <BioForm user={user} field={isCompany ? "description" : "bio"} />
     </PageContainer>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { RatingFlow } from "@/components/ratings/rating-flow";
+import { EmployerRatingFlow } from "@/components/ratings/employer-rating-flow";
 
 export const metadata: Metadata = {
   title: "Rate your employer",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 
 /** Individual-only: the six-step monthly rating flow. */
 export default function RateCompanyPage() {
-  return <RatingFlow />;
+  return <EmployerRatingFlow />;
 }

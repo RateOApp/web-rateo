@@ -8,20 +8,26 @@ import { cn } from "@/lib/utils";
 
 type CriterionStepProps = {
   criterion: string;
+  /**
+   * The sentence before the criterion, without it or the question mark - e.g.
+   * "What would you rate your company in terms of". Both directions of the
+   * rating share this step, and only the subject differs.
+   */
+  question: string;
   /** 0 when nothing is picked yet. */
   value: number;
   onChange: (value: number) => void;
 };
 
 /** One of the five 1-5 score steps of the rating flow. */
-export function CriterionStep({ criterion, value, onChange }: CriterionStepProps) {
+export function CriterionStep({ criterion, question, value, onChange }: CriterionStepProps) {
   const [infoOpen, setInfoOpen] = useState(false);
   const info = getCriterionInfo(criterion);
 
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-xl font-bold text-brand-900 sm:text-2xl">
-        What would you rate your company in terms of{" "}
+        {question}{" "}
         <span className="text-accent-600">{criterion}</span>?
         {info ? (
           <button

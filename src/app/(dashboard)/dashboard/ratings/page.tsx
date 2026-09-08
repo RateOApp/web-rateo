@@ -1,34 +1,19 @@
 import type { Metadata } from "next";
-import { Star } from "lucide-react";
+import { redirect } from "next/navigation";
+import { CompanyRatings } from "@/components/company/ratings/company-ratings";
 import { IndividualRatings } from "@/components/ratings/individual-ratings";
-import { PageContainer } from "@/components/layout/page-container";
-import { EmptyState } from "@/components/shared/empty-state";
-import { PageHeader } from "@/components/shared/page-header";
 import { getCachedUser } from "@/lib/current-user";
 
 export const metadata: Metadata = {
   title: "Ratings",
 };
 
-/** Shared route: individuals get the full screen, companies land in Phase 5. */
+/** Shared route: each role's two rating tabs live at the same URL. */
 export default async function RatingsPage() {
   const user = await getCachedUser();
+  if (!user) redirect("/login");
 
-  if (user?.role === "company") {
-    return (
-      <PageContainer>
-        <PageHeader
-          title="Ratings"
-          description="Your company rating and the ratings you give your team."
-        />
-        <EmptyState
-          icon={Star}
-          title="Company ratings"
-          description="Company ratings arrive in Phase 5."
-        />
-      </PageContainer>
-    );
-  }
+  if (user.role === "company") return <CompanyRatings user={user} />;
 
   return <IndividualRatings />;
 }

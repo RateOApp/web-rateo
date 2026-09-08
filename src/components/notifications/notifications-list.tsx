@@ -11,9 +11,14 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMe } from "@/hooks/use-me";
 import { NOTIFICATIONS_KEY, useNotifications } from "@/hooks/use-notifications";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { notificationsService } from "@/services/notifications";
+import {
+  COMPANY_NOTIFICATION_FALLBACK_ROUTE,
+  COMPANY_NOTIFICATION_ROUTES,
+} from "@/types/candidates";
 import {
   NOTIFICATION_FALLBACK_ROUTE,
   NOTIFICATION_ROUTES,
@@ -24,12 +29,20 @@ export function NotificationsList() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const kyc = useKycGate();
+  const { data: me } = useMe();
   const { data, isLoading } = useNotifications();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
 
   const notifications = data ?? [];
   const unread = notifications.filter((notification) => !notification.read).length;
+
+  // Companies and individuals land on different screens for the same type.
+  const isCompany = me?.role === "company";
+  const routes = isCompany ? COMPANY_NOTIFICATION_ROUTES : NOTIFICATION_ROUTES;
+  const fallback = isCompany
+    ? COMPANY_NOTIFICATION_FALLBACK_ROUTE
+    : NOTIFICATION_FALLBACK_ROUTE;
 
   function patchCache(update: (list: AppNotification[]) => AppNotification[]) {
     queryClient.setQueryData<AppNotification[]>(NOTIFICATIONS_KEY, (old) =>
@@ -55,7 +68,7 @@ export function NotificationsList() {
     // Messages sit behind the KYC gate, exactly like the tab bar entry does.
     if (type === "message" && !kyc.requireVerified()) return;
 
-    router.push(NOTIFICATION_ROUTES[type] ?? NOTIFICATION_FALLBACK_ROUTE);
+    router.push(routes[type] ?? fallback);
   }
 
   async function handleDelete(notification: AppNotification) {
