@@ -13,6 +13,7 @@ import {
   LogOut,
   Lock,
   ScrollText,
+  Shield,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
@@ -131,10 +132,11 @@ export function SettingsMenu() {
 
       <Section title="Support">
         <LinkRow href="/dashboard/help" label="Help & Support" icon={HelpCircle} />
+        <LinkRow href="/terms" label="Terms and Policies" icon={ScrollText} />
         <LinkRow
-          href="https://rateo.ng/terms"
-          label="Terms and Policies"
-          icon={ScrollText}
+          href="https://rateo.ng/privacy-policy"
+          label="Privacy Policy"
+          icon={Shield}
           external
         />
       </Section>

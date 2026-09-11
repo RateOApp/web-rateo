@@ -2,16 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseCandidatesTab, type CandidatesTab } from "@/components/company/candidates/candidates-tab";
 import { ManageApplications } from "@/components/company/candidates/manage-applications";
 import { SavedTalents } from "@/components/company/candidates/saved-talents";
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export type CandidatesTab = "applications" | "saved";
-
-export function parseCandidatesTab(value: string | undefined): CandidatesTab {
-  return value === "saved" ? "saved" : "applications";
-}
 
 /**
  * The candidates hub: the company's job posts on one tab, its saved talents on

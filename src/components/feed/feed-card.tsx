@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Heart, Loader2, Users, X } from "lucide-react";
+import { CheckCircle2, ChevronRight, Heart, Loader2, Users, X } from "lucide-react";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { humanizeEmploymentType, jobCompanyName, jobSalaryLabel } from "@/lib/format";
@@ -43,6 +43,8 @@ export function FeedCard({
   ).filter((chip): chip is string => Boolean(chip?.trim()));
 
   const interestCount = imported ? (job.interestCount ?? 0) : 0;
+  // Only set when the feed was fetched as an authenticated individual.
+  const alreadyInterested = imported && Boolean(job.hasRegisteredInterest);
 
   return (
     <article
@@ -123,11 +125,19 @@ export function FeedCard({
 
         {imported ? (
           <span className="flex min-w-0 items-center gap-2 rounded-full border border-success px-3 py-1.5">
-            <Users aria-hidden="true" className="size-4 shrink-0 text-success" />
+            {alreadyInterested ? (
+              <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-success" />
+            ) : (
+              <Users aria-hidden="true" className="size-4 shrink-0 text-success" />
+            )}
             <span className="truncate text-xs font-medium text-brand-900">
-              {interestCount > 0
-                ? `${interestCount} interested`
-                : "Be the first to show interest"}
+              {alreadyInterested
+                ? interestCount > 0
+                  ? `${interestCount} interested · You're in`
+                  : "Interested ✓"
+                : interestCount > 0
+                  ? `${interestCount} interested`
+                  : "Be the first to show interest"}
             </span>
           </span>
         ) : (

@@ -3,12 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AcceptDialog } from "@/components/company/jobs/accept-dialog";
 import { ApplicantRow } from "@/components/company/jobs/applicant-row";
 import { useKycGate, useParticipationLock } from "@/components/dashboard/dashboard-providers";
+import { BulletList } from "@/components/shared/bullet-list";
 import { CardListSkeleton } from "@/components/shared/card-list-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,12 @@ type Filter = (typeof FILTERS)[number]["value"];
 function JobSummary({ job, applicants }: { job: Job; applicants: number }) {
   const salary = formatSalaryRange(job.minSalary, job.maxSalary);
   const deadline = formatDate(job.deadline);
+  const [showDetails, setShowDetails] = useState(false);
+
+  // What the candidate sees on the public page - the owner had no way to read
+  // it back here without opening the edit form.
+  const tasks = (job.tasks ?? []).filter((task) => task?.trim());
+  const perks = (job.perks ?? []).filter((perk) => perk?.trim());
 
   return (
     <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4 sm:p-5">
@@ -64,6 +71,51 @@ function JobSummary({ job, applicants }: { job: Job; applicants: number }) {
         <Users aria-hidden="true" className="size-4" />
         {applicants} Applicant{applicants === 1 ? "" : "s"}
       </span>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          aria-expanded={showDetails}
+          onClick={() => setShowDetails((previous) => !previous)}
+          className="inline-flex items-center gap-1 rounded text-sm font-medium text-brand-700 transition-colors hover:text-brand-900 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          {showDetails ? "Hide job details" : "View job details"}
+          {showDetails ? (
+            <ChevronUp aria-hidden="true" className="size-4" />
+          ) : (
+            <ChevronDown aria-hidden="true" className="size-4" />
+          )}
+        </button>
+
+        {showDetails ? (
+          <div className="mt-3 flex flex-col gap-4 border-t border-brand-100 pt-3">
+            <section>
+              <h3 className="text-sm font-semibold text-brand-900">Job Description</h3>
+              <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">
+                {job.description?.trim() || "No description provided."}
+              </p>
+            </section>
+
+            {tasks.length ? (
+              <section>
+                <h3 className="text-sm font-semibold text-brand-900">Tasks</h3>
+                <div className="mt-2">
+                  <BulletList items={tasks} />
+                </div>
+              </section>
+            ) : null}
+
+            {perks.length ? (
+              <section>
+                <h3 className="text-sm font-semibold text-brand-900">Perks</h3>
+                <div className="mt-2">
+                  <BulletList items={perks} />
+                </div>
+              </section>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

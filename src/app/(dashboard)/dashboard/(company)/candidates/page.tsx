@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { CandidatesHub, parseCandidatesTab } from "@/components/company/candidates/candidates-hub";
+import { CandidatesHub } from "@/components/company/candidates/candidates-hub";
+import { parseCandidatesTab } from "@/components/company/candidates/candidates-tab";
 import { PageContainer } from "@/components/layout/page-container";
 
 export const metadata: Metadata = {

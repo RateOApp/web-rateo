@@ -18,6 +18,13 @@ export function useJobs(params: JobListParams = {}) {
   });
 }
 
+/**
+ * Key for the personalised home feed (no `categories` param - see
+ * `jobsService.feed`). Shared by the feed itself and everything that mutates a
+ * card on it (saving a job, registering / withdrawing interest).
+ */
+export const JOB_FEED_KEY = ['jobs', 'personalised'] as const;
+
 export function useJob(id: string | undefined) {
   return useQuery({
     queryKey: ['job', id] as const,

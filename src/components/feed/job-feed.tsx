@@ -10,14 +10,13 @@ import { FeedCard } from "@/components/feed/feed-card";
 import { CardListSkeleton } from "@/components/shared/card-list-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { JOB_FEED_KEY } from "@/hooks/use-jobs";
+import { MY_INTERESTS_KEY, useMyInterests } from "@/hooks/use-my-interests";
 import { SAVED_JOBS_KEY } from "@/hooks/use-saved-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { sortByMatch } from "@/lib/job-match";
 import { jobsService } from "@/services/jobs";
 import { isImportedJob, type AnyJob, type Job, type JobsResponse, type User } from "@/types/api";
-
-/** Key for the personalised feed (no `categories` param - see `jobsService.feed`). */
-export const JOB_FEED_KEY = ["jobs", "personalised"] as const;
 
 type JobFeedProps = {
   user: User;
@@ -30,6 +29,10 @@ export function JobFeed({ user, initialData }: JobFeedProps) {
   const kyc = useKycGate();
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [pendingId, setPendingId] = useState<string | null>(null);
+
+  // The feed only ever renders for a signed-in individual (see individual-home),
+  // so this is always enabled - companies never reach it.
+  const myInterests = useMyInterests();
 
   const query = useQuery({
     queryKey: JOB_FEED_KEY,
@@ -57,10 +60,32 @@ export function JobFeed({ user, initialData }: JobFeedProps) {
     if (pendingId) return;
 
     if (isImportedJob(job)) {
+      // Already interested? The flag on the card (or the cached list) answers
+      // without a round trip, like the app does for saved jobs.
+      const already =
+        job.hasRegisteredInterest ||
+        myInterests.data?.some((entry) => entry.job?._id === job._id);
+      if (already) {
+        toast.info("Already registered", {
+          description: "You showed interest in this job before",
+        });
+        dismiss(job._id);
+        return;
+      }
+
       setPendingId(job._id);
       try {
-        await jobsService.expressInterest(job._id);
-        toast.success("Interest registered — we'll notify you if the employer joins");
+        const result = await jobsService.expressInterest(job._id);
+        if (result.alreadyRegistered) {
+          toast.info("Already registered", {
+            description: "You showed interest in this job before",
+          });
+        } else {
+          toast.success("Interest registered", {
+            description: "We'll notify you if the employer joins Rate'O",
+          });
+        }
+        void queryClient.invalidateQueries({ queryKey: MY_INTERESTS_KEY });
         dismiss(job._id);
       } catch (error) {
         toast.error(getApiErrorMessage(error, "Could not register interest"));

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CalendarClock, ExternalLink, MapPin, Users } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { JobActions } from "@/components/jobs/job-actions";
+import { BulletList } from "@/components/shared/bullet-list";
 import { StarRating } from "@/components/shared/star-rating";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
@@ -78,19 +79,6 @@ function Section({
       <h2 className="text-lg font-semibold text-brand-900">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
-  );
-}
-
-function BulletList({ items }: { items: string[] }) {
-  return (
-    <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-      {items.map((item, index) => (
-        <li key={`${index}-${item.slice(0, 24)}`} className="flex gap-2">
-          <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-700" />
-          <span className="min-w-0 break-words">{item.replace(/^[•\-*]\s*/, "")}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

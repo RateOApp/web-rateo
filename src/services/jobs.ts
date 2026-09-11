@@ -3,10 +3,13 @@ import { jobListQuery, type JobListParams } from '@/services/params';
 import type {
   AnyJob,
   ApiMessage,
+  InterestResponse,
   Job,
   JobApplication,
   JobCategoriesResponse,
+  JobInterest,
   JobsResponse,
+  MyInterestsResponse,
 } from '@/types/api';
 import type {
   ApplicantStatus,
@@ -98,8 +101,23 @@ export const jobsService = {
   },
 
   /** Imported (scraped) jobs have no company account; interest is the CTA. */
-  expressInterest(id: string): Promise<ApiMessage> {
-    return api.post<ApiMessage>(`/imported-jobs/${id}/interest`).then((r) => r.data);
+  expressInterest(id: string): Promise<InterestResponse> {
+    return api.post<InterestResponse>(`/imported-jobs/${id}/interest`).then((r) => r.data);
+  },
+
+  /** Idempotent - withdrawing an interest that is not there still answers 200. */
+  withdrawInterest(id: string): Promise<InterestResponse> {
+    return api.delete<InterestResponse>(`/imported-jobs/${id}/interest`).then((r) => r.data);
+  },
+
+  /**
+   * `GET /imported-jobs/interests/mine`. Individuals only - the server 403s
+   * for companies.
+   */
+  myInterests(): Promise<JobInterest[]> {
+    return api
+      .get<MyInterestsResponse>('/imported-jobs/interests/mine')
+      .then((r) => r.data?.interests ?? []);
   },
 
   /* ---- company-side (owner only) --------------------------------------- */

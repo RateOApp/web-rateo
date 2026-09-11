@@ -71,6 +71,9 @@ export const NOTIFICATION_ROUTES: Record<string, string> = {
   application: '/dashboard/saved',
   job_match: '/dashboard',
   employment: '/dashboard/work-history',
+  // Fallback only - `notifications-list` routes straight to the imported job
+  // when the notification carries a `relatedId`.
+  job_interest: '/dashboard/saved?tab=interested',
 };
 
 export const NOTIFICATION_FALLBACK_ROUTE = '/dashboard/profile';

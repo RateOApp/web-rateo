@@ -44,7 +44,7 @@ a 401 there clears cookies and redirects to `/login`; `setupCompleted === false`
 
 ```
 (public)   /            -> redirect /jobs
-           /jobs, /jobs/[id], /companies, /companies/[id], /search
+           /jobs, /jobs/[id], /companies, /companies/[id], /search, /terms
 (auth)     /login, /register, /register/company, /forgot-password, /verify,
            /reset-password, /sso-callback
 (dashboard)/dashboard                     role-aware home

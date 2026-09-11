@@ -265,9 +265,35 @@ export type ImportedJob = {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
+  /**
+   * Only present when the request was authenticated as an INDIVIDUAL - the
+   * public (unauthenticated) job fetch never carries it.
+   */
+  hasRegisteredInterest?: boolean;
+  /** Set once the employer joined and the listing became a native `Job`. */
+  nativeJobId?: string | null;
 };
 
 export type AnyJob = Job | ImportedJob;
+
+/** `POST` / `DELETE /imported-jobs/:id/interest`. */
+export type InterestResponse = ApiMessage & {
+  interestCount?: number;
+  alreadyRegistered?: boolean;
+  withdrawn?: boolean;
+};
+
+export type JobInterestStatus = 'interested' | 'notified' | 'moved';
+
+export type JobInterest = {
+  _id: string;
+  status: JobInterestStatus;
+  createdAt?: string;
+  job: ImportedJob;
+};
+
+/** `GET /imported-jobs/interests/mine`. */
+export type MyInterestsResponse = { interests: JobInterest[] };
 
 export function isImportedJob(job: AnyJob): job is ImportedJob {
   return job.isImported === true;

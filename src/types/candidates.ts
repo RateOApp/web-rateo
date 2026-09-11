@@ -149,6 +149,9 @@ export const COMPANY_NOTIFICATION_ROUTES: Record<string, string> = {
   account: '/dashboard/profile',
   system: '/dashboard/employees',
   employment: '/dashboard/employees',
+  // Companies never receive this one; the map is kept total so a stray row
+  // still lands somewhere sensible.
+  job_interest: '/dashboard',
 };
 
 export const COMPANY_NOTIFICATION_FALLBACK_ROUTE = '/dashboard';

@@ -3,21 +3,26 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApplicationsList } from "@/components/saved/applications-list";
+import { InterestsList } from "@/components/saved/interests-list";
 import { SavedJobsList } from "@/components/saved/saved-jobs-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppliedJobs } from "@/hooks/use-applied-jobs";
+import { useMyInterests } from "@/hooks/use-my-interests";
 import { useSavedJobs } from "@/hooks/use-saved-jobs";
+import { parseSavedTab, type SavedTab } from "@/components/saved/saved-tab";
 
-export type SavedTab = "applications" | "saved";
 
-export function parseSavedTab(value: string | undefined): SavedTab {
-  return value === "saved" ? "saved" : "applications";
-}
+const TAB_ROUTES: Record<SavedTab, string> = {
+  applications: "/dashboard/saved",
+  saved: "/dashboard/saved?tab=saved",
+  interested: "/dashboard/saved?tab=interested",
+};
 
 /**
- * Applications / Saved Jobs, with counts on both tabs - so both lists load,
- * unlike the mobile app which only fetches the visible one. The active tab is
- * mirrored into `?tab=` so the view survives a refresh or a shared link.
+ * Applications / Saved Jobs / Interested, with counts on all three tabs - so
+ * every list loads, unlike the mobile app which only fetches the visible one.
+ * The active tab is mirrored into `?tab=` so the view survives a refresh or a
+ * shared link.
  */
 export function SavedTabs({ initialTab }: { initialTab: SavedTab }) {
   const router = useRouter();
@@ -25,9 +30,11 @@ export function SavedTabs({ initialTab }: { initialTab: SavedTab }) {
 
   const applications = useAppliedJobs();
   const saved = useSavedJobs();
+  const interests = useMyInterests();
 
   const applicationCount = applications.data?.length ?? 0;
   const savedCount = saved.data?.length ?? 0;
+  const interestCount = interests.data?.length ?? 0;
 
   return (
     <Tabs
@@ -35,9 +42,7 @@ export function SavedTabs({ initialTab }: { initialTab: SavedTab }) {
       onValueChange={(value) => {
         const next = parseSavedTab(value);
         setTab(next);
-        router.replace(next === "saved" ? "/dashboard/saved?tab=saved" : "/dashboard/saved", {
-          scroll: false,
-        });
+        router.replace(TAB_ROUTES[next], { scroll: false });
       }}
     >
       <TabsList className="mb-4 w-full">
@@ -49,6 +54,10 @@ export function SavedTabs({ initialTab }: { initialTab: SavedTab }) {
           Saved Jobs
           {savedCount > 0 ? <Count value={savedCount} /> : null}
         </TabsTrigger>
+        <TabsTrigger value="interested" className="flex-1 gap-2">
+          Interested
+          {interestCount > 0 ? <Count value={interestCount} /> : null}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="applications">
@@ -56,6 +65,9 @@ export function SavedTabs({ initialTab }: { initialTab: SavedTab }) {
       </TabsContent>
       <TabsContent value="saved">
         <SavedJobsList />
+      </TabsContent>
+      <TabsContent value="interested">
+        <InterestsList />
       </TabsContent>
     </Tabs>
   );

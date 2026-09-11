@@ -10,9 +10,12 @@ import {
   useParticipationLock,
 } from "@/components/dashboard/dashboard-providers";
 import { JobMenu } from "@/components/jobs/job-menu";
+import { RemoveDialog } from "@/components/saved/remove-dialog";
 import { ShareButton } from "@/components/shared/share-button";
 import { Button } from "@/components/ui/button";
 import { APPLIED_JOBS_KEY, useAppliedJobs } from "@/hooks/use-applied-jobs";
+import { JOB_FEED_KEY } from "@/hooks/use-jobs";
+import { MY_INTERESTS_KEY, useMyInterests } from "@/hooks/use-my-interests";
 import { SAVED_JOBS_KEY, useSavedJobs } from "@/hooks/use-saved-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { isDeadlinePast } from "@/lib/format";
@@ -60,10 +63,14 @@ export function JobActions({
   const isIndividual = viewer.authenticated && viewer.role !== "company";
   const savedJobs = useSavedJobs(isIndividual);
   const appliedJobs = useAppliedJobs(isIndividual);
+  const myInterests = useMyInterests(isIndividual);
 
   const [appliedLocal, setAppliedLocal] = useState(false);
   const [savedLocal, setSavedLocal] = useState(false);
-  const [interested, setInterested] = useState(false);
+  // `null` = "no local decision yet, trust the server"; the public page never
+  // gets `hasRegisteredInterest`, so the my-interests list answers there.
+  const [interestOverride, setInterestOverride] = useState<boolean | null>(null);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [pending, setPending] = useState<"apply" | "save" | "interest" | null>(null);
 
   const imported = isImportedJob(job);
@@ -78,20 +85,26 @@ export function JobActions({
     Boolean(appliedJobs.data?.some((entry) => entry.job?._id === job._id));
   const saved =
     initialSaved || savedLocal || Boolean(savedJobs.data?.some((entry) => entry._id === job._id));
+  const interested =
+    interestOverride ??
+    Boolean(
+      (imported && job.hasRegisteredInterest) ||
+        myInterests.data?.some((entry) => entry.job?._id === job._id),
+    );
 
   const jobPath = `/jobs/${job._id}`;
   const shareTitle = job.title?.trim() || "Job on Rate'O";
 
-  async function run(
+  async function run<T>(
     kind: "apply" | "save" | "interest",
-    action: () => Promise<unknown>,
-    onSuccess: () => void,
+    action: () => Promise<T>,
+    onSuccess: (result: T) => void,
   ) {
     if (pending) return;
     setPending(kind);
     try {
-      await action();
-      onSuccess();
+      const result = await action();
+      onSuccess(result);
     } catch (error) {
       const status = statusOf(error);
       const message = getApiErrorMessage(error, "Something went wrong");
@@ -179,6 +192,11 @@ export function JobActions({
     );
   }
 
+  function refreshInterest() {
+    void queryClient.invalidateQueries({ queryKey: MY_INTERESTS_KEY });
+    void queryClient.invalidateQueries({ queryKey: JOB_FEED_KEY });
+  }
+
   function handleInterest() {
     if (lock.isOverdue) {
       lock.open();
@@ -188,9 +206,33 @@ export function JobActions({
     void run(
       "interest",
       () => jobsService.expressInterest(job._id),
+      (result) => {
+        setInterestOverride(true);
+        refreshInterest();
+        if (result.alreadyRegistered) {
+          toast.info("Already registered", {
+            description: "You showed interest in this job before",
+          });
+        } else {
+          toast.success("Interest registered", {
+            description: "We'll notify you if the employer joins Rate'O",
+          });
+        }
+      },
+    );
+  }
+
+  /** Withdrawing is never participation-locked - only registering is. */
+  function handleWithdrawInterest() {
+    setWithdrawOpen(false);
+
+    void run(
+      "interest",
+      () => jobsService.withdrawInterest(job._id),
       () => {
-        setInterested(true);
-        toast.success("Interest registered — we'll notify you if the employer joins");
+        setInterestOverride(false);
+        refreshInterest();
+        toast.success("Interest withdrawn");
       },
     );
   }
@@ -201,9 +243,10 @@ export function JobActions({
         {imported ? (
           <Button
             size="lg"
-            className="h-11 w-full bg-brand-700 text-white"
-            disabled={interested || pending !== null}
-            onClick={handleInterest}
+            variant={interested ? "outline" : "default"}
+            className={interested ? "h-11 w-full" : "h-11 w-full bg-brand-700 text-white"}
+            disabled={pending !== null}
+            onClick={interested ? () => setWithdrawOpen(true) : handleInterest}
           >
             {pending === "interest" ? (
               <Loader2 aria-hidden="true" className="animate-spin" />
@@ -212,7 +255,7 @@ export function JobActions({
             ) : (
               <Send aria-hidden="true" />
             )}
-            {interested ? "Interest registered ✓" : "Show interest"}
+            {interested ? "Interested ✓ · Withdraw" : "Show interest"}
           </Button>
         ) : (
           <>
@@ -263,6 +306,18 @@ export function JobActions({
 
         <ShareButton path={jobPath} title={shareTitle} className="h-11 w-full" />
       </div>
+
+      {imported ? (
+        <RemoveDialog
+          open={withdrawOpen}
+          busy={pending === "interest"}
+          title="Withdraw interest?"
+          description="You'll no longer be notified if this employer joins Rate'O."
+          confirmLabel="Withdraw"
+          onOpenChange={(next) => (next ? null : setWithdrawOpen(false))}
+          onConfirm={handleWithdrawInterest}
+        />
+      ) : null}
 
       {kyc.fallback}
       {lock.fallback}

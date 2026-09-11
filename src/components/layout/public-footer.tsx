@@ -4,8 +4,8 @@ import { Logo } from "@/components/shared/logo";
 const footerLinks = [
   { label: "Jobs", href: "/jobs", external: false },
   { label: "Companies", href: "/companies", external: false },
-  { label: "Terms", href: "https://rateo.ng/terms", external: true },
-  { label: "Privacy", href: "https://rateo.ng/privacy", external: true },
+  { label: "Terms", href: "/terms", external: false },
+  { label: "Privacy", href: "https://rateo.ng/privacy-policy", external: true },
   { label: "Get the app", href: "https://rateo.ng", external: true },
 ];
 

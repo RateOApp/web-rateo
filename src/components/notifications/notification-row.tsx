@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, MoreVertical, ShieldCheck, Trash2 } from "lucide-react";
+import { Bell, Briefcase, MoreVertical, ShieldCheck, Trash2, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +19,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { notificationBody, type AppNotification } from "@/types/dashboard";
+
+const ICONS: Record<string, LucideIcon> = {
+  kyc: ShieldCheck,
+  job_interest: Briefcase,
+};
 
 /** "Just now" / "12m" / "5h" / "3 Sep 2026" - matches the mobile row. */
 export function notificationTime(value: string | undefined): string {
@@ -45,7 +50,7 @@ export function NotificationRow({
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const unread = !notification.read;
-  const Icon = notification.type === "kyc" ? ShieldCheck : Bell;
+  const Icon = ICONS[notification.type ?? ""] ?? Bell;
 
   return (
     <li

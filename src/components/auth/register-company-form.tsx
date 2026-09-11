@@ -187,6 +187,26 @@ export function RegisterCompanyForm() {
         <SubmitButton pending={isSubmitting} pendingLabel="Registering…">
           Register company
         </SubmitButton>
+
+        <p className="text-center text-xs text-muted-foreground">
+          By creating an account you agree to our{" "}
+          <Link
+            href="/terms"
+            className="rounded font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            Terms of Use
+          </Link>{" "}
+          and{" "}
+          <a
+            href="https://rateo.ng/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            Privacy Policy
+          </a>
+          .
+        </p>
       </form>
 
       <SocialSection role="company" companyName={companyName.trim() || undefined} />

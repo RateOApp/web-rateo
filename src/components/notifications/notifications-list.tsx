@@ -25,6 +25,17 @@ import {
   type AppNotification,
 } from "@/types/dashboard";
 
+/** `relatedId` arrives as a raw id on some rows and as a populated doc on others. */
+function relatedIdOf(notification: AppNotification): string | null {
+  const related = notification.relatedId;
+  if (typeof related === "string") return related.trim() || null;
+  if (related && typeof related === "object") {
+    const id = (related as { _id?: unknown })._id;
+    if (typeof id === "string") return id.trim() || null;
+  }
+  return null;
+}
+
 export function NotificationsList() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -67,6 +78,16 @@ export function NotificationsList() {
     const type = notification.type ?? "";
     // Messages sit behind the KYC gate, exactly like the tab bar entry does.
     if (type === "message" && !kyc.requireVerified()) return;
+
+    // `job_interest` points at one imported job (`onModel: 'ImportedJob'`), so
+    // open it directly instead of the Interested tab.
+    if (type === "job_interest") {
+      const relatedId = relatedIdOf(notification);
+      if (relatedId) {
+        router.push(`/jobs/${relatedId}`);
+        return;
+      }
+    }
 
     router.push(routes[type] ?? fallback);
   }

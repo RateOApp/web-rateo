@@ -11,24 +11,34 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-/** Shared confirm sheet for both Saved tabs. Copy is verbatim from mobile. */
+/**
+ * Shared confirm sheet for the Saved tabs and the job detail actions. The
+ * default copy is verbatim from mobile; callers that destroy something other
+ * than a row (withdrawing interest) override it.
+ */
 export function RemoveDialog({
   open,
   onOpenChange,
   onConfirm,
   busy = false,
+  title = "Are you sure you want to delete?",
+  description = "This action cannot be undone.",
+  confirmLabel = "Yes, delete",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   busy?: boolean;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={(next) => (busy ? null : onOpenChange(next))}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Are you sure you want to delete?</DialogTitle>
-          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button
@@ -41,7 +51,7 @@ export function RemoveDialog({
           </Button>
           <Button variant="destructive" size="lg" disabled={busy} onClick={onConfirm}>
             {busy ? <Loader2 aria-hidden="true" className="animate-spin" /> : null}
-            Yes, delete
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
