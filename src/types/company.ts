@@ -127,6 +127,8 @@ export type BusinessKycPayload = {
   proofOfAddress: string;
   cacNumber: string;
   cacCertificate: string;
+  /** 11-digit NIN of the person submitting; the server rejects without it. */
+  attesterNin: string;
   /** Live selfie of the person submitting; the server rejects without it. */
   attesterSelfieUrl: string;
 };

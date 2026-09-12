@@ -15,8 +15,12 @@ import { cn } from '@/lib/utils';
 export type MethodValues = {
   cacNumber: string;
   cacCertificate: string | null;
+  /** 11-digit NIN of the person performing this verification (the attester). */
+  attesterNin: string;
   attesterSelfieUrl: string | null;
 };
+
+const NIN_PATTERN = /^\d{11}$/;
 
 type KycMethodStepProps = {
   values: MethodValues;
@@ -106,6 +110,34 @@ export function KycMethodStep({
             disabled={submitting}
             onChange={(url) => onChange({ cacCertificate: url })}
           />
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="attester-nin" className="text-brand-900">
+              Your NIN (the person verifying)
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              11-digit National Identification Number of the person submitting this
+              verification.
+            </p>
+            <Input
+              id="attester-nin"
+              value={values.attesterNin}
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={11}
+              disabled={submitting}
+              placeholder="Enter your 11-digit NIN"
+              aria-invalid={
+                values.attesterNin.length > 0 && !NIN_PATTERN.test(values.attesterNin)
+                  ? true
+                  : undefined
+              }
+              onChange={(event) =>
+                onChange({ attesterNin: event.target.value.replace(/\D/g, '').slice(0, 11) })
+              }
+              className="h-11"
+            />
+          </div>
 
           <div
             className={cn(

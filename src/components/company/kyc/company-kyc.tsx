@@ -65,6 +65,7 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
   const [method, setMethod] = useState<MethodValues>({
     cacNumber: '',
     cacCertificate: null,
+    attesterNin: '',
     attesterSelfieUrl: null,
   });
 
@@ -79,6 +80,10 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
     ) {
       return;
     }
+    if (!/^\d{11}$/.test(method.attesterNin)) {
+      setError('Please enter a valid 11-digit NIN of the person verifying');
+      return;
+    }
 
     setError(null);
     setSelfieRejected(false);
@@ -91,6 +96,7 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
         proofOfAddress: address.proofOfAddress,
         cacNumber: method.cacNumber.trim(),
         cacCertificate: method.cacCertificate,
+        attesterNin: method.attesterNin,
         attesterSelfieUrl: method.attesterSelfieUrl,
       });
       // The server has already set `pending`; refetch rather than writing the
