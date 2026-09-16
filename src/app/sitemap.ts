@@ -11,6 +11,13 @@ const MAX_PAGES = 5;
 export const revalidate = 3600;
 
 /**
+ * `/join/[code]` is deliberately absent: a referral link belongs to one person,
+ * it is not public content. Crawling it stays allowed (see `robots.ts`) so a
+ * shared link still previews and resolves.
+ *
+ * `/claim/[token]` is deliberately absent too: a claim link is single-use and
+ * emailed to one employer, and `generateMetadata` there sends `noindex`.
+ *
  * `auth: false` keeps `serverFetch` out of the cookie store, so the sitemap can
  * be generated at build time, and stops the backend personalising the job feed.
  * The matching `next.revalidate` lets the whole route be prerendered with ISR

@@ -4,7 +4,10 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.rateo.mobile",
-      "sha256_cert_fingerprints": ["TODO_SHA256_FINGERPRINT"]
+      "sha256_cert_fingerprints": [
+        "EE:98:DA:F7:C1:AE:BB:0F:05:1B:50:71:1A:F1:FE:9C:42:BB:E1:75:D0:BB:8A:BA:80:C2:3C:CC:75:2A:3C:22",
+        "9E:8E:F7:43:6B:38:04:2B:E1:FD:AB:99:C1:55:2D:15:BD:C2:FE:4E:38:84:29:AA:BD:E2:18:79:C5:25:61:9F"
+      ]
     }
   }
 ]

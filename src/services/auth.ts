@@ -1,5 +1,6 @@
 import { api } from '@/lib/api/client';
 import type { ApiMessage, ClientAuthResponse, Role, User } from '@/types/api';
+import type { ReferralSource } from '@/types/referrals';
 
 /**
  * Client-only auth API.
@@ -12,11 +13,24 @@ import type { ApiMessage, ClientAuthResponse, Role, User } from '@/types/api';
 export type LoginPayload = { email: string; password: string };
 
 /**
+ * Optional referral fields accepted by `POST /auth/register` (and
+ * `/auth/social-login`). An unknown or self-referring code never fails the
+ * signup: the backend skips the referral and answers `referralApplied: false`.
+ */
+export type ReferralFields = {
+  referralCode?: string;
+  referralSource?: ReferralSource;
+};
+
+/** A register / social-login response, plus whether a referral was recorded. */
+export type AuthResponseWithReferral = ClientAuthResponse & { referralApplied?: boolean };
+
+/**
  * `phoneNumber` matches what the mobile app sends; the controller accepts
  * either `phone` or `phoneNumber` and stores it as `phone`. Send `''` when the
  * optional number is left blank.
  */
-export type RegisterIndividualPayload = {
+export type RegisterIndividualPayload = ReferralFields & {
   role: 'individual';
   firstName: string;
   lastName: string;
@@ -27,7 +41,7 @@ export type RegisterIndividualPayload = {
 };
 
 /** `industry` is optional at register time - the company setup wizard asks for it. */
-export type RegisterCompanyPayload = {
+export type RegisterCompanyPayload = ReferralFields & {
   role: 'company';
   email: string;
   password: string;
@@ -48,7 +62,7 @@ export type RegisterPayload = RegisterIndividualPayload | RegisterCompanyPayload
  * `POST /api/auth/social-login`, which reads the Clerk user server-side. This
  * type is kept because the backend endpoint still takes this shape.
  */
-export type SocialLoginPayload = {
+export type SocialLoginPayload = ReferralFields & {
   email: string;
   firstName?: string;
   lastName?: string;
@@ -61,12 +75,14 @@ export const authService = {
     return api.post<ClientAuthResponse>('/auth/login', payload).then((r) => r.data);
   },
 
-  register(payload: RegisterPayload): Promise<ClientAuthResponse> {
-    return api.post<ClientAuthResponse>('/auth/register', payload).then((r) => r.data);
+  register(payload: RegisterPayload): Promise<AuthResponseWithReferral> {
+    return api.post<AuthResponseWithReferral>('/auth/register', payload).then((r) => r.data);
   },
 
-  socialLogin(payload: SocialLoginPayload): Promise<ClientAuthResponse> {
-    return api.post<ClientAuthResponse>('/auth/social-login', payload).then((r) => r.data);
+  socialLogin(payload: SocialLoginPayload): Promise<AuthResponseWithReferral> {
+    return api
+      .post<AuthResponseWithReferral>('/auth/social-login', payload)
+      .then((r) => r.data);
   },
 
   /** 5-digit code emailed on register. Requires the session cookie. */

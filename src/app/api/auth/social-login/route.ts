@@ -6,6 +6,7 @@ import { messageFromBody } from '@/lib/api/errors';
 import { clerkServerEnabled } from '@/lib/clerk';
 import { extractClerkName } from '@/lib/clerk-name';
 import { getApiBaseUrl } from '@/lib/env';
+import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from '@/lib/referral-code';
 import { isRole, setSessionCookies, type Role } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,8 @@ export const dynamic = 'force-dynamic';
  * The email NEVER comes from the request body: it is read server-side from the
  * Clerk session with `currentUser()`. The client may only say which kind of
  * account to create if this is a first sign-in (`role`, `companyName`), which
- * the backend ignores for an existing user.
+ * the backend ignores for an existing user, plus an optional `referralCode`
+ * (used only on the new-user branch, and never able to fail the sign-in).
  *
  * This is a dedicated handler, not the `/api/[...path]` proxy: it has to call
  * the backend itself after reading the Clerk user. Static route files take
@@ -26,6 +28,8 @@ export const dynamic = 'force-dynamic';
 const bodySchema = z.object({
   role: z.enum(['individual', 'company']).optional(),
   companyName: z.string().trim().min(1).max(200).optional(),
+  referralCode: z.string().trim().max(MAX_REFERRAL_CODE_LENGTH).optional(),
+  referralSource: z.enum(['typed', 'link', 'clipboard', 'social', 'web']).optional(),
 });
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -54,7 +58,8 @@ export async function POST(req: NextRequest): Promise<Response> {
   // Unknown keys are dropped rather than rejected - the client is ours, but
   // nothing beyond role/companyName may ever reach the backend.
   const parsed = bodySchema.safeParse(isRecord(raw) ? raw : {});
-  const { role, companyName } = parsed.success ? parsed.data : {};
+  const { role, companyName, referralCode, referralSource } = parsed.success ? parsed.data : {};
+  const code = normaliseReferralCode(referralCode);
 
   const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress;
   if (!email) {
@@ -73,6 +78,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     avatar: user.imageUrl ?? '',
     ...(role ? { role } : {}),
     ...(role === 'company' && companyName ? { companyName } : {}),
+    ...(code ? { referralCode: code, referralSource: referralSource ?? 'web' } : {}),
   };
 
   let upstream: Response;

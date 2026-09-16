@@ -8,6 +8,29 @@ import { toast } from "sonner";
 
 import { AuthCard } from "@/components/auth/auth-card";
 import { clerkErrorMessage, safeNextPath, SSO_STORAGE_KEY, type SsoIntent } from "@/lib/clerk";
+import { clearPendingReferralCode, readPendingReferralCode } from "@/lib/referral-code";
+import { REFERRAL_SOURCE_WEB } from "@/types/referrals";
+
+/**
+ * Late-applies a referral code after a social sign-up, for the case where the
+ * backend could not use it on the social-login call itself.
+ *
+ * Deliberately a bare `fetch`, not the axios client: this is best effort, and
+ * the axios 401 interceptor would treat a refusal as an expired session. Every
+ * failure is swallowed - a missed referral must never break a sign-in.
+ */
+async function applyReferralAfterSocial(code: string): Promise<void> {
+  try {
+    await fetch("/api/referrals/apply", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ code, source: REFERRAL_SOURCE_WEB }),
+    });
+  } catch {
+    // Offline, rate-limited, or outside the 7-day late-apply window.
+  }
+}
 
 /**
  * Clerk's custom-flow OAuth callback (docs/AUTH_FLOWS.md, step 2-4).
@@ -117,6 +140,7 @@ export function SsoCallback() {
       }
 
       const intent = readIntent();
+      const referralCode = readPendingReferralCode();
 
       let res: Response;
       try {
@@ -124,7 +148,13 @@ export function SsoCallback() {
           method: "POST",
           credentials: "same-origin",
           headers: { "content-type": "application/json", accept: "application/json" },
-          body: JSON.stringify({ role: intent.role, companyName: intent.companyName }),
+          body: JSON.stringify({
+            role: intent.role,
+            companyName: intent.companyName,
+            ...(referralCode
+              ? { referralCode, referralSource: REFERRAL_SOURCE_WEB }
+              : {}),
+          }),
         });
       } catch {
         await fail("Network error. Check your connection and try again.");
@@ -149,10 +179,17 @@ export function SsoCallback() {
         return;
       }
 
-      const setupCompleted =
-        typeof body === "object" && body !== null
-          ? (body as { setupCompleted?: unknown }).setupCompleted
-          : undefined;
+      const record = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
+
+      // The session cookie is set by the response above, so a late apply here
+      // is already authenticated. Non-blocking: a slow or refused apply must
+      // not hold up the redirect any longer than one request.
+      if (referralCode) {
+        if (record?.referralApplied !== true) await applyReferralAfterSocial(referralCode);
+        clearPendingReferralCode();
+      }
+
+      const setupCompleted = record?.setupCompleted;
 
       const target =
         setupCompleted === false ? "/setup" : (safeNextPath(intent.next) ?? "/dashboard");

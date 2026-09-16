@@ -13,6 +13,7 @@ import {
   SSO_STORAGE_KEY,
   type SsoIntent,
 } from "@/lib/clerk";
+import { storePendingReferralCode } from "@/lib/referral-code";
 
 export type SocialButtonsProps = {
   /** Which kind of account to create if this is a first sign-in. */
@@ -21,6 +22,11 @@ export type SocialButtonsProps = {
   companyName?: string;
   /** Where to land after the exchange, when it is not `/setup`. */
   next?: string;
+  /**
+   * Referral code to carry across the OAuth round-trip. Parked in
+   * `sessionStorage` before leaving and picked up by `/sso-callback`.
+   */
+  referralCode?: string;
 };
 
 type Provider = {
@@ -60,7 +66,7 @@ export function SocialButtons(props: SocialButtonsProps) {
   return <ClerkSocialButtons {...props} />;
 }
 
-function ClerkSocialButtons({ role, companyName, next }: SocialButtonsProps) {
+function ClerkSocialButtons({ role, companyName, next, referralCode }: SocialButtonsProps) {
   const { signIn } = useSignIn();
   const [pending, setPending] = useState<OAuthStrategy | null>(null);
 
@@ -68,7 +74,9 @@ function ClerkSocialButtons({ role, companyName, next }: SocialButtonsProps) {
     setPending(strategy);
 
     // The provider round-trip loses React state, so the intent rides in
-    // sessionStorage and `/sso-callback` picks it back up.
+    // sessionStorage and `/sso-callback` picks it back up. The referral code
+    // gets its own key, shared with the mobile app's naming.
+    storePendingReferralCode(referralCode);
     const intent: SsoIntent = { role, companyName, next };
     try {
       window.sessionStorage.setItem(SSO_STORAGE_KEY, JSON.stringify(intent));

@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ExternalLink,
   Flag,
+  Gift,
   HelpCircle,
   Loader2,
   LogOut,
@@ -123,6 +124,7 @@ export function SettingsMenu() {
           label="Notification"
           icon={Bell}
         />
+        <LinkRow href="/dashboard/referrals" label="Invite friends" icon={Gift} />
         <button type="button" onClick={handleKyc} className={ROW_CLASS}>
           <RowIcon icon={BadgeCheck} />
           <span className="flex-1">KYC</span>

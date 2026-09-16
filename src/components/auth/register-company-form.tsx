@@ -12,13 +12,16 @@ import { FormAlert } from "@/components/auth/form-alert";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PhoneField } from "@/components/auth/phone-field";
+import { ReferralCodeField } from "@/components/auth/referral-code-field";
 import { RoleSwitch } from "@/components/auth/role-switch";
 import { SocialSection } from "@/components/auth/social-section";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { describedBy, FieldShell, TextField } from "@/components/auth/text-field";
 import { authErrorMessage } from "@/lib/auth-error";
+import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from "@/lib/referral-code";
 import { PASSWORDS_DO_NOT_MATCH, passwordSchema } from "@/lib/password";
 import { authService } from "@/services/auth";
+import { REFERRAL_SOURCE_WEB } from "@/types/referrals";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -33,6 +36,12 @@ const schema = z
     phoneNumber: z.string(),
     password: passwordSchema(),
     confirmPassword: z.string().min(1, "Please enter and confirm your password."),
+    referralCode: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .max(MAX_REFERRAL_CODE_LENGTH, "Referral codes are at most 12 characters.")
+      .optional(),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: PASSWORDS_DO_NOT_MATCH,
@@ -41,7 +50,12 @@ const schema = z
 
 type RegisterCompanyValues = z.infer<typeof schema>;
 
-export function RegisterCompanyForm() {
+/** `initialReferralCode` comes from `?ref=` on the page, already normalised. */
+export function RegisterCompanyForm({
+  initialReferralCode = "",
+}: {
+  initialReferralCode?: string;
+} = {}) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -58,16 +72,19 @@ export function RegisterCompanyForm() {
       phoneNumber: "",
       password: "",
       confirmPassword: "",
+      referralCode: initialReferralCode,
     },
   });
 
   // `useWatch` (not `watch`) so the React Compiler can still memoize this tree.
   const password = useWatch({ control, name: "password" });
   const companyName = useWatch({ control, name: "companyName" });
+  const referralCode = normaliseReferralCode(useWatch({ control, name: "referralCode" }));
 
   async function onSubmit(values: RegisterCompanyValues) {
     setServerError(null);
     const email = values.email.trim();
+    const code = normaliseReferralCode(values.referralCode);
     try {
       await authService.register({
         role: "company",
@@ -75,6 +92,9 @@ export function RegisterCompanyForm() {
         email,
         password: values.password,
         phoneNumber: values.phoneNumber,
+        // An unknown code never fails the signup - the backend skips it and
+        // answers `referralApplied: false`.
+        ...(code ? { referralCode: code, referralSource: REFERRAL_SOURCE_WEB } : {}),
       });
       router.push(`/verify?email=${encodeURIComponent(email)}&mode=signup`);
     } catch (err) {
@@ -182,6 +202,12 @@ export function RegisterCompanyForm() {
           />
         </FieldShell>
 
+        <ReferralCodeField
+          value={referralCode}
+          error={errors.referralCode?.message}
+          {...register("referralCode")}
+        />
+
         <FormAlert>{serverError}</FormAlert>
 
         <SubmitButton pending={isSubmitting} pendingLabel="Registering…">
@@ -209,7 +235,11 @@ export function RegisterCompanyForm() {
         </p>
       </form>
 
-      <SocialSection role="company" companyName={companyName.trim() || undefined} />
+      <SocialSection
+        role="company"
+        companyName={companyName.trim() || undefined}
+        referralCode={referralCode}
+      />
     </AuthCard>
   );
 }

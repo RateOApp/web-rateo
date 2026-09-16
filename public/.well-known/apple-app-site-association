@@ -1,11 +1,12 @@
 {
   "applinks": {
+    "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.com.rateoapp"],
+        "appID": "ZK24XSZUJJ.com.rateoapp",
+        "paths": ["/join/*"],
         "components": [
-          { "/": "/jobs/*" },
-          { "/": "/companies/*" }
+          { "/": "/join/*", "comment": "Referral join links" }
         ]
       }
     ]
