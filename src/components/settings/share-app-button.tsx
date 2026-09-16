@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Share2 } from "lucide-react";
+import { Check, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ export const SHARE_APP_MESSAGE = `Check out Rateo — rate and discover workplac
  */
 export function ShareAppButton({ className }: { className?: string }) {
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   async function handleShare() {
     if (typeof navigator.share === "function") {
@@ -41,21 +42,40 @@ export function ShareAppButton({ className }: { className?: string }) {
     }
   }
 
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(SHARE_APP_URL);
+      setLinkCopied(true);
+      toast.success("Link copied");
+      window.setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy the link");
+    }
+  }
+
+  const rowClass = cn(
+    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-medium text-brand-900 transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+    className,
+  );
+
   return (
-    <button
-      type="button"
-      onClick={() => void handleShare()}
-      className={cn(
-        "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-medium text-brand-900 transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-        className,
-      )}
-    >
-      {copied ? (
-        <Check aria-hidden="true" className="size-5 text-success" />
-      ) : (
-        <Share2 aria-hidden="true" className="size-5 text-brand-700" />
-      )}
-      {copied ? "Copied" : "Share App"}
-    </button>
+    <>
+      <button type="button" onClick={() => void handleShare()} className={rowClass}>
+        {copied ? (
+          <Check aria-hidden="true" className="size-5 text-success" />
+        ) : (
+          <Share2 aria-hidden="true" className="size-5 text-brand-700" />
+        )}
+        {copied ? "Copied" : "Share App"}
+      </button>
+      <button type="button" onClick={() => void handleCopyLink()} className={rowClass}>
+        {linkCopied ? (
+          <Check aria-hidden="true" className="size-5 text-success" />
+        ) : (
+          <Copy aria-hidden="true" className="size-5 text-brand-700" />
+        )}
+        {linkCopied ? "Copied" : "Copy link"}
+      </button>
+    </>
   );
 }

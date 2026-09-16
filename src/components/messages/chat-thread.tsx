@@ -92,8 +92,24 @@ function mergeIncoming(
 
 /** `/dashboard/messages/[userId]` - one conversation. */
 export function ChatThread({ userId }: { userId: string }) {
-  const { data: me } = useMe();
+  const { data: me, isPending: meIsPending, isError: meIsError } = useMe();
   const myId = me?._id ?? null;
+  // `myId` is `null` until `me` resolves; rendering bubbles with an unknown
+  // identity would make every message look like it came from the other side.
+  const identityPending = meIsPending && !meIsError;
+
+  // In a 1:1 thread the partner's id is authoritative for "which side": a
+  // message is theirs iff its sender is the thread partner. This does not
+  // depend on `me` resolving, so a stale or shared session never flips sides.
+  const isMine = useCallback(
+    (sender: Parameters<typeof refId>[0]) => {
+      const id = refId(sender);
+      if (id === userId) return false;
+      if (myId && id === myId) return true;
+      return id !== null && id !== userId;
+    },
+    [userId, myId],
+  );
 
   const queryClient = useQueryClient();
   const kyc = useKycGate();
@@ -509,7 +525,7 @@ export function ChatThread({ userId }: { userId: string }) {
     : replyTo
       ? {
           kind: "reply",
-          name: refId(replyTo.sender) === myId ? "Yourself" : otherName,
+          name: isMine(replyTo.sender) ? "Yourself" : otherName,
           preview: replyTo.content?.trim() || (replyTo.attachments?.length ? "Photo" : ""),
         }
       : null;
@@ -527,7 +543,7 @@ export function ChatThread({ userId }: { userId: string }) {
       />
 
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-        {thread.isPending ? (
+        {thread.isPending || identityPending ? (
           <ul className="flex flex-col gap-3" aria-busy="true">
             {[0, 1, 2, 3, 4].map((row) => (
               <li key={row} className={row % 2 === 0 ? "flex" : "flex justify-end"}>
@@ -544,7 +560,7 @@ export function ChatThread({ userId }: { userId: string }) {
                 <MessageBubble
                   key={row.key}
                   message={row.message}
-                  mine={refId(row.message.sender) === myId}
+                  mine={isMine(row.message.sender)}
                   myId={myId}
                   otherName={otherName}
                   onReact={(message, emoji) => void handleReact(message, emoji)}

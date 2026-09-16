@@ -79,14 +79,14 @@ export function ExploreJobs({ user: initialUser }: { user: User }) {
 
       {industries.length ? (
         <nav aria-label="Filter by industry" className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-          <ul className="flex w-max items-center gap-2 pb-1">
-            <li>
+          <ul className="flex items-center gap-2 pb-1">
+            <li className="shrink-0">
               <Chip active={!industry} onClick={() => setIndustry(null)}>
                 All
               </Chip>
             </li>
             {industries.map((entry) => (
-              <li key={entry.industry}>
+              <li key={entry.industry} className="shrink-0">
                 <Chip
                   active={industry === entry.industry}
                   onClick={() =>

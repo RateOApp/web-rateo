@@ -12,6 +12,8 @@ import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/errors";
+import { APP_STORE_ID } from "@/lib/constants/stores";
+import { getAppUrl } from "@/lib/env";
 import { excerpt, formatPublicId, isObjectId } from "@/lib/format";
 import { kycBadgeStatus, participationLabel } from "@/lib/rating";
 import { getCachedUser } from "@/lib/current-user";
@@ -45,11 +47,16 @@ export async function generateMetadata({
   const { id } = await params;
   if (!isObjectId(id)) return { title: "Company not found" };
 
+  // Absolute, because `metadataBase` resolves `alternates`/`openGraph` but not
+  // `itunes` - iOS needs the full url to hand the app.
+  const appUrl = getAppUrl();
+  const itunes = { appId: APP_STORE_ID, appArgument: `${appUrl}/companies/${id}` };
+
   let company: User;
   try {
     company = await companiesServer.byId(id, PUBLIC_FETCH);
   } catch {
-    return { title: "Company", alternates: { canonical: `/companies/${id}` } };
+    return { title: "Company", alternates: { canonical: `/companies/${id}` }, itunes };
   }
   if (company?.role !== "company") return { title: "Company not found" };
 
@@ -66,6 +73,9 @@ export async function generateMetadata({
     alternates: { canonical: url },
     openGraph: { type: "profile", url, title, description },
     twitter: { card: "summary_large_image", title, description },
+    // iOS Smart App Banner: "Open" when the app is installed (the Universal
+    // Link claims `/companies/*`), "View" in the App Store when it isn't.
+    itunes,
   };
 }
 

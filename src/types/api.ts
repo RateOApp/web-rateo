@@ -224,6 +224,13 @@ export type GenderPreference = 'any' | 'male' | 'female' | (string & {});
 /** Native job posted by a Rate O company account. */
 export type Job = {
   _id: string;
+  /**
+   * Human-readable URL segment (`customer-support-rateo`). Assigned once at
+   * creation and never changed, so a shared link survives a title edit.
+   * Optional: jobs posted before the feature get one lazily on their first
+   * fetch by id. Build links with `jobPath()`, never by hand.
+   */
+  slug?: string;
   isImported?: false;
   title?: string;
   type?: string;

@@ -14,7 +14,7 @@ export default async function PublicLayout({
     <>
       <PublicHeader session={session} />
       {/* pb-20 clears the fixed mobile tab bar (h-16 + breathing room). */}
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <main className="min-w-0 flex-1 pb-20 md:pb-0">{children}</main>
       <PublicFooter />
       <MobilePublicTabs isLoggedIn={session !== null} />
     </>

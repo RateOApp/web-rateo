@@ -6,6 +6,8 @@ import { CopyCodeButton } from "@/components/join/copy-code-button";
 import { StoreButtons } from "@/components/join/store-buttons";
 import { PageContainer } from "@/components/layout/page-container";
 import { Badge } from "@/components/ui/badge";
+import { APP_STORE_ID } from "@/lib/constants/stores";
+import { getAppUrl } from "@/lib/env";
 import { normaliseReferralCode } from "@/lib/referral-code";
 import { getServerSession } from "@/lib/session";
 import { referralsServer } from "@/services/referrals.server";
@@ -55,6 +57,10 @@ export async function generateMetadata({
     alternates: { canonical: url },
     openGraph: { type: "website", url, title, description },
     twitter: { card: "summary_large_image", title, description },
+    // iOS Smart App Banner. The absolute url is what iOS hands the installed
+    // app, so the invite code survives the hop; `metadataBase` does not resolve
+    // `itunes` the way it resolves `alternates`/`openGraph`.
+    itunes: { appId: APP_STORE_ID, appArgument: `${getAppUrl()}${url}` },
   };
 }
 

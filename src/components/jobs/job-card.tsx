@@ -6,6 +6,7 @@ import {
   jobMetaLine,
   timeAgo,
 } from "@/lib/format";
+import { jobPath } from "@/lib/job-path";
 import { cn } from "@/lib/utils";
 import { isImportedJob, type AnyJob } from "@/types/api";
 
@@ -41,7 +42,7 @@ export function JobCard({ job, className }: { job: AnyJob; className?: string })
 
           <h3 className="mt-0.5 text-base font-semibold text-brand-900 sm:text-lg">
             <Link
-              href={`/jobs/${job._id}`}
+              href={jobPath(job)}
               className="rounded transition-colors hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               {job.title?.trim() || "Untitled role"}

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 import { getAppUrl } from '@/lib/env';
+import { jobPath } from '@/lib/job-path';
 import { companiesServer } from '@/services/companies.server';
 import { jobsServer } from '@/services/jobs.server';
 import { isImportedJob } from '@/types/api';
@@ -58,7 +59,9 @@ async function jobUrls(appUrl: string): Promise<MetadataRoute.Sitemap> {
         // Imported jobs are scraped listings with no canonical detail page.
         if (isImportedJob(job)) continue;
         entries.push({
-          url: `${appUrl}/jobs/${job._id}`,
+          // Slug URL when the job has one - the id URL permanently redirects to
+          // it, and a sitemap should only ever list canonical addresses.
+          url: `${appUrl}${jobPath(job)}`,
           lastModified: job.updatedAt ? new Date(job.updatedAt) : undefined,
           changeFrequency: 'weekly',
           priority: 0.7,

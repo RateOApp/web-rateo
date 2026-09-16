@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { APPLIED_JOBS_KEY, useAppliedJobs } from "@/hooks/use-applied-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { formatSalaryRange, jobCompanyName } from "@/lib/format";
+import { jobPath } from "@/lib/job-path";
 import { cn } from "@/lib/utils";
 import { jobsService } from "@/services/jobs";
 import {
@@ -93,7 +94,7 @@ export function ApplicationsList() {
 
               <div className="min-w-0 flex-1">
                 <Link
-                  href={`/jobs/${job._id}`}
+                  href={jobPath(job)}
                   className="block truncate rounded font-semibold text-brand-900 transition-colors hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   {job.title?.trim() || "Untitled role"}

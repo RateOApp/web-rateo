@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { CalendarClock, ExternalLink, MapPin, Users } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { JobActions } from "@/components/jobs/job-actions";
@@ -10,6 +10,8 @@ import { UserAvatar } from "@/components/shared/user-avatar";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
 import { Badge } from "@/components/ui/badge";
 import { ApiError } from "@/lib/api/errors";
+import { APP_STORE_ID } from "@/lib/constants/stores";
+import { getAppUrl } from "@/lib/env";
 import {
   excerpt,
   formatDate,
@@ -20,6 +22,7 @@ import {
   jobSalaryLabel,
   timeAgo,
 } from "@/lib/format";
+import { isJobSlug, jobPath } from "@/lib/job-path";
 import { formatRating, kycBadgeStatus } from "@/lib/rating";
 import { getServerSession } from "@/lib/session";
 import { companiesServer } from "@/services/companies.server";
@@ -44,19 +47,32 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  if (!isObjectId(id)) return { title: "Job not found" };
+  // `:id` is either the job's ObjectId or its readable slug - the backend
+  // resolves both.
+  if (!isObjectId(id) && !isJobSlug(id)) return { title: "Job not found" };
+
+  // The Smart App Banner's `app-argument` has to be the ABSOLUTE url, so iOS
+  // hands the app the same address the visitor is on. `metadataBase` only
+  // resolves `alternates`/`openGraph`, not `itunes`.
+  const appUrl = getAppUrl();
 
   let job: AnyJob;
   try {
     job = await jobsServer.byId(id, JOB_FETCH);
   } catch {
-    return { title: "Job", alternates: { canonical: `/jobs/${id}` } };
+    return {
+      title: "Job",
+      alternates: { canonical: `/jobs/${id}` },
+      itunes: { appId: APP_STORE_ID, appArgument: `${appUrl}/jobs/${id}` },
+    };
   }
 
   const title = `${job.title?.trim() || "Job"} at ${jobCompanyName(job)}`;
   const description =
     excerpt(job.description) || `See this role on Rate'O and how its people rate the employer.`;
-  const url = `/jobs/${id}`;
+  // Always the slug URL when there is one, whichever form was requested - the
+  // page permanently redirects the id form to it.
+  const url = jobPath(job);
 
   return {
     title,
@@ -64,6 +80,9 @@ export async function generateMetadata({
     alternates: { canonical: url },
     openGraph: { type: "article", url, title, description },
     twitter: { card: "summary_large_image", title, description },
+    // iOS Smart App Banner: "Open" when the app is installed (the Universal
+    // Link claims `/jobs/*`), "View" in the App Store when it isn't.
+    itunes: { appId: APP_STORE_ID, appArgument: `${appUrl}${url}` },
   };
 }
 
@@ -97,11 +116,22 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  if (!isObjectId(id)) notFound();
+  // Either address resolves: the ObjectId (every link shared before slugs
+  // existed) or the readable slug.
+  if (!isObjectId(id) && !isJobSlug(id)) notFound();
 
   const [job, session] = await Promise.all([loadJob(id), getServerSession()]);
 
   const imported = isImportedJob(job);
+
+  // An id URL for a job that has a slug is not canonical - send crawlers and
+  // humans to the readable one for good. Imported listings have no slug and
+  // stay on their id. `permanentRedirect` works by throwing, so it must stay
+  // outside `loadJob`'s try/catch, which would swallow it.
+  if (!imported && job.slug && isObjectId(id)) {
+    permanentRedirect(jobPath(job));
+  }
+
   const companyId = imported ? undefined : job.company?._id;
 
   // The job's populated company projection has no kycStatus / isOg / rating, so

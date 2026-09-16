@@ -4,9 +4,11 @@
     "details": [
       {
         "appID": "ZK24XSZUJJ.com.rateoapp",
-        "paths": ["/join/*"],
+        "paths": ["/join/*", "/jobs/*", "/companies/*"],
         "components": [
-          { "/": "/join/*", "comment": "Referral join links" }
+          { "/": "/join/*", "comment": "Referral join links" },
+          { "/": "/jobs/*", "comment": "Shared job detail links" },
+          { "/": "/companies/*", "comment": "Shared company profile links" }
         ]
       }
     ]

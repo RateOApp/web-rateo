@@ -14,13 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCompanyEmployees } from '@/hooks/use-company-employees';
 import { useTerminatedEmployees } from '@/hooks/use-terminated-employees';
 import type { CompanyEmployee } from '@/types/company';
-
-export type EmployeesTab = 'employees' | 'pending' | 'terminated';
-
-export function parseEmployeesTab(value: string | undefined): EmployeesTab {
-  if (value === 'pending' || value === 'terminated') return value;
-  return 'employees';
-}
+import { parseEmployeesTab, type EmployeesTab } from '@/components/company/employees/employees-tab';
 
 function Empty({ children }: { children: string }) {
   return (

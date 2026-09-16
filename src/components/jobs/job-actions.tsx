@@ -11,6 +11,7 @@ import {
 } from "@/components/dashboard/dashboard-providers";
 import { JobMenu } from "@/components/jobs/job-menu";
 import { RemoveDialog } from "@/components/saved/remove-dialog";
+import { OpenInAppButton } from "@/components/shared/open-in-app-button";
 import { ShareButton } from "@/components/shared/share-button";
 import { Button } from "@/components/ui/button";
 import { APPLIED_JOBS_KEY, useAppliedJobs } from "@/hooks/use-applied-jobs";
@@ -19,6 +20,7 @@ import { MY_INTERESTS_KEY, useMyInterests } from "@/hooks/use-my-interests";
 import { SAVED_JOBS_KEY, useSavedJobs } from "@/hooks/use-saved-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { isDeadlinePast } from "@/lib/format";
+import { jobPath } from "@/lib/job-path";
 import type { Role } from "@/lib/session";
 import { jobsService } from "@/services/jobs";
 import { isImportedJob, type AnyJob } from "@/types/api";
@@ -92,8 +94,19 @@ export function JobActions({
         myInterests.data?.some((entry) => entry.job?._id === job._id),
     );
 
-  const jobPath = `/jobs/${job._id}`;
+  // Share/return links use the readable slug URL; every API call below stays on
+  // `job._id`, which is the only form the write endpoints accept.
+  const jobHref = jobPath(job);
   const shareTitle = job.title?.trim() || "Job on Rate'O";
+
+  // Share/copy plus the Android-only "Open in app" affordance - the same row in
+  // all three viewer states below, so it is built once.
+  const shareRow = (
+    <>
+      <ShareButton path={jobHref} title={shareTitle} className="h-11 w-full" />
+      <OpenInAppButton path={jobHref} className="h-11 w-full" />
+    </>
+  );
 
   async function run<T>(
     kind: "apply" | "save" | "interest",
@@ -133,12 +146,12 @@ export function JobActions({
     return (
       <div className="flex flex-col gap-2">
         <Button asChild size="lg" className="h-11 w-full bg-brand-700 text-white">
-          <Link href={`/login?next=${encodeURIComponent(jobPath)}`}>Log in to apply</Link>
+          <Link href={`/login?next=${encodeURIComponent(jobHref)}`}>Log in to apply</Link>
         </Button>
         <Button asChild variant="outline" size="lg" className="h-11 w-full">
           <Link href="/register">Create account</Link>
         </Button>
-        <ShareButton path={jobPath} title={shareTitle} className="h-11 w-full" />
+        {shareRow}
       </div>
     );
   }
@@ -151,7 +164,7 @@ export function JobActions({
         <p className="text-sm text-muted-foreground">
           You&rsquo;re signed in as a company, so you can&rsquo;t apply for roles.
         </p>
-        <ShareButton path={jobPath} title={shareTitle} className="h-11 w-full" />
+        {shareRow}
       </div>
     );
   }
@@ -304,7 +317,7 @@ export function JobActions({
           </>
         )}
 
-        <ShareButton path={jobPath} title={shareTitle} className="h-11 w-full" />
+        {shareRow}
       </div>
 
       {imported ? (

@@ -18,7 +18,7 @@ export default async function DashboardLayout({
     <UserProvider user={user}>
       <AppHeader user={user} />
       {/* pb-20 clears the fixed 64px mobile tab bar. */}
-      <main className="flex-1 bg-cream-50 pb-20 md:pb-0">
+      <main className="min-w-0 flex-1 bg-cream-50 pb-20 md:pb-0">
         <DashboardProviders>{children}</DashboardProviders>
       </main>
       <BottomTabs role={user.role} />

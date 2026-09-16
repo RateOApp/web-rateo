@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 
 import { humanizeEmploymentType, isObjectId, jobCompanyName, jobSalaryLabel } from "@/lib/format";
+import { isJobSlug } from "@/lib/job-path";
 import { jobsServer } from "@/services/jobs.server";
 import { isImportedJob, type AnyJob } from "@/types/api";
 
@@ -25,7 +26,9 @@ export default async function JobOpengraphImage({
   const { id } = await params;
 
   let job: AnyJob | null = null;
-  if (isObjectId(id)) {
+  // Both address forms resolve server-side; anything else skips the fetch and
+  // renders the generic card.
+  if (isObjectId(id) || isJobSlug(id)) {
     job = await jobsServer
       .byId(id, { auth: false, next: { revalidate: 300 } })
       .catch(() => null);

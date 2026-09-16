@@ -5,6 +5,7 @@ import { CheckCircle2, ChevronRight, Heart, Loader2, Users, X } from "lucide-rea
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { humanizeEmploymentType, jobCompanyName, jobSalaryLabel } from "@/lib/format";
+import { jobPath } from "@/lib/job-path";
 import { cn } from "@/lib/utils";
 import { isImportedJob, type AnyJob } from "@/types/api";
 
@@ -62,7 +63,7 @@ export function FeedCard({
           />
           <div className="min-w-0 flex-1">
             <Link
-              href={`/jobs/${job._id}`}
+              href={jobPath(job)}
               className="flex items-center gap-1 rounded font-semibold text-brand-900 transition-colors hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <span className="truncate">{job.title?.trim() || "Untitled role"}</span>

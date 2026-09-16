@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
-import {
-  EmployeesTabs,
-  parseEmployeesTab,
-} from "@/components/company/employees/employees-tabs";
+import { EmployeesTabs } from "@/components/company/employees/employees-tabs";
+import { parseEmployeesTab } from "@/components/company/employees/employees-tab";
 
 export const metadata: Metadata = {
   title: "Employees",

@@ -56,9 +56,9 @@ export function CategoryChips({
       aria-label="Filter by industry"
       className={cn("-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6", className)}
     >
-      <ul className="flex w-max items-center gap-2 pb-1">
+      <ul className="flex items-center gap-2 pb-1">
         {items.map((item) => (
-          <li key={item.key}>
+          <li key={item.key} className="shrink-0">
             <Link
               href={item.href}
               aria-current={item.isActive ? "true" : undefined}

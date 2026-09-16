@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { SAVED_JOBS_KEY, useSavedJobs } from "@/hooks/use-saved-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { formatSalaryRange, jobCompanyName } from "@/lib/format";
+import { jobPath } from "@/lib/job-path";
 import { formatRating, hasRating } from "@/lib/rating";
 import { jobsService } from "@/services/jobs";
 import type { Job } from "@/types/api";
@@ -79,7 +80,7 @@ export function SavedJobsList() {
 
               <div className="min-w-0 flex-1">
                 <Link
-                  href={`/jobs/${job._id}`}
+                  href={jobPath(job)}
                   className="block truncate rounded font-semibold text-brand-900 transition-colors hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   {job.title?.trim() || "Untitled role"}
