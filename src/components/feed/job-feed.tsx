@@ -88,7 +88,10 @@ export function JobFeed({ user, initialData }: JobFeedProps) {
         void queryClient.invalidateQueries({ queryKey: MY_INTERESTS_KEY });
         dismiss(job._id);
       } catch (error) {
-        toast.error(getApiErrorMessage(error, "Could not register interest"));
+        // Registering interest requires verified KYC, same as applying/saving.
+        const message = getApiErrorMessage(error, "Could not register interest");
+        if (/kyc|verif/i.test(message)) kyc.open();
+        else toast.error(message);
       } finally {
         setPendingId(null);
       }

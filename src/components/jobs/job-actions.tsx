@@ -215,6 +215,7 @@ export function JobActions({
       lock.open();
       return;
     }
+    if (!kyc.requireVerified()) return;
 
     void run(
       "interest",
