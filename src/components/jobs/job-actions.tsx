@@ -229,7 +229,7 @@ export function JobActions({
           });
         } else {
           toast.success("Interest registered", {
-            description: "We'll notify you if the employer joins Rate'O",
+            description: "The company will be notified of your application",
           });
         }
       },
@@ -326,7 +326,7 @@ export function JobActions({
           open={withdrawOpen}
           busy={pending === "interest"}
           title="Withdraw interest?"
-          description="You'll no longer be notified if this employer joins Rate'O."
+          description="The company will no longer see your interest in this job."
           confirmLabel="Withdraw"
           onOpenChange={(next) => (next ? null : setWithdrawOpen(false))}
           onConfirm={handleWithdrawInterest}

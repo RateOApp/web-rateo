@@ -253,10 +253,7 @@ export default async function JobDetailPage({
               <div className="mt-4 rounded-xl bg-accent-50 p-4">
                 <p className="text-sm text-brand-900">
                   {job.expectationCopy?.trim() ||
-                    "This job was imported by Rate'O. Register your interest and we'll invite the employer to join."}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Employer not yet on Rate&rsquo;O.
+                    "Show your interest and the company will be notified of your application."}
                 </p>
               </div>
             ) : null}
@@ -395,7 +392,7 @@ export default async function JobDetailPage({
               </Link>
             ) : (
               <p className="mt-4 text-sm text-muted-foreground">
-                This employer is not on Rate&rsquo;O yet.
+                Company profile is not available for this listing.
               </p>
             )}
           </div>

@@ -19,7 +19,7 @@ export default async function SavedPage({
     <PageContainer>
       <PageHeader
         title="Saved"
-        description="Applications you have sent, roles you want to come back to, and imported jobs you asked to hear about."
+        description="Applications you have sent, roles you want to come back to, and jobs you showed interest in."
       />
       <SavedTabs initialTab={parseSavedTab(tab)} />
     </PageContainer>

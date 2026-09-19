@@ -26,7 +26,7 @@ const TONE_CLASSES = {
 /** 'interested' is still waiting on the employer; the other two mean they came. */
 function statusPill(status: JobInterestStatus | undefined) {
   return status === "notified" || status === "moved"
-    ? { tone: "success" as const, label: "Employer joined" }
+    ? { tone: "success" as const, label: "Reviewed" }
     : { tone: "warning" as const, label: "Interested" };
 }
 
@@ -67,8 +67,8 @@ export function InterestsList() {
     return (
       <EmptyState
         icon={Sparkles}
-        title="You haven't shown interest in any imported jobs yet."
-        description="Show interest on a job whose employer isn't on Rate'O yet to see it here."
+        title="You haven't shown interest in any jobs yet."
+        description="Show interest on a job to see it here."
         action={
           <Button asChild size="lg" className="h-11 bg-brand-700 text-white">
             <Link href="/dashboard/explore/jobs">Find jobs</Link>
@@ -85,7 +85,7 @@ export function InterestsList() {
           const job = interest.job;
           const pill = statusPill(interest.status);
           const salary = job.salary?.trim() || "Negotiable";
-          const companyName = job.companyName?.trim() || "Employer not on Rate'O";
+          const companyName = job.companyName?.trim() || "Company";
           const interestCount = job.interestCount ?? 0;
 
           return (
@@ -139,7 +139,7 @@ export function InterestsList() {
         open={target !== null}
         busy={busy}
         title="Withdraw your interest?"
-        description="You'll no longer be notified if this employer joins Rate'O."
+        description="The company will no longer see your interest in this job."
         confirmLabel="Withdraw"
         onOpenChange={(next) => (next ? null : setTarget(null))}
         onConfirm={() => void handleRemove()}

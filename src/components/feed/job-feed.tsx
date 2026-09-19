@@ -82,7 +82,7 @@ export function JobFeed({ user, initialData }: JobFeedProps) {
           });
         } else {
           toast.success("Interest registered", {
-            description: "We'll notify you if the employer joins Rate'O",
+            description: "The company will be notified of your application",
           });
         }
         void queryClient.invalidateQueries({ queryKey: MY_INTERESTS_KEY });

@@ -86,7 +86,7 @@ export function FeedCard({
 
             {imported ? (
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Employer not yet on Rate&rsquo;O
+                Company will be notified of your application
               </p>
             ) : null}
           </div>
