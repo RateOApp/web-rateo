@@ -80,3 +80,14 @@ export function useCandidateResults(keyword: string | undefined) {
     staleTime: 60_000,
   });
 }
+
+/** `GET /users/top-rated?role=individual` - server-ranked, no client sort needed. */
+export function useTopRatedCandidates(limit = 3) {
+  return useQuery({
+    queryKey: ['topRated', 'individual', limit] as const,
+    queryFn: () => candidatesService.topRated(limit),
+    staleTime: 30_000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+}

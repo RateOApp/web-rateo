@@ -9,9 +9,9 @@ import { Pager } from "@/components/shared/pager";
 import { SearchForm } from "@/components/shared/search-form";
 import { StarRating } from "@/components/shared/star-rating";
 import { UserAvatar } from "@/components/shared/user-avatar";
-import { compareTopRated, formatRating } from "@/lib/rating";
+import { formatRating } from "@/lib/rating";
 import { companiesServer } from "@/services/companies.server";
-import type { User, UsersResponse } from "@/types/api";
+import type { TopRatedResponse, User, UsersResponse } from "@/types/api";
 
 export const metadata: Metadata = {
   title: "Companies",
@@ -23,21 +23,20 @@ export const metadata: Metadata = {
 type CompaniesSearchParams = { q?: string; page?: string };
 
 const EMPTY: UsersResponse = { users: [], page: 1, pages: 0 };
+const EMPTY_TOP_RATED: Pick<TopRatedResponse, "users"> = { users: [] };
 
 function toPageNumber(value: string | undefined): number {
   const parsed = Number.parseInt(value ?? "1", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
-/** Small horizontal strip of the best-rated companies on the current page. */
+/**
+ * Small horizontal strip of the best-rated companies, as ranked by the
+ * server (`GET /users/top-rated`). Rendered as-is - no client-side
+ * filter/sort/slice.
+ */
 function TopRated({ companies }: { companies: User[] }) {
-  if (companies.length < 3) return null;
-
-  const top = [...companies]
-    .filter((company) => (company.overallRating ?? 0) > 0)
-    .sort(compareTopRated)
-    .slice(0, 5);
-
+  const top = companies;
   if (!top.length) return null;
 
   return (
@@ -80,13 +79,20 @@ export default async function CompaniesPage({
   const { q, page } = await searchParams;
   const keyword = q?.trim() || undefined;
   const pageNumber = toPageNumber(page);
+  const showTopRated = pageNumber === 1 && !keyword;
 
-  const data = await companiesServer
-    .list({ keyword, pageNumber }, { auth: false, next: { revalidate: 60 } })
-    .catch(() => EMPTY);
+  const [data, topRated] = await Promise.all([
+    companiesServer
+      .list({ keyword, pageNumber }, { auth: false, next: { revalidate: 60 } })
+      .catch(() => EMPTY),
+    showTopRated
+      ? companiesServer
+          .topRated(5, { auth: false, next: { revalidate: 60 } })
+          .catch(() => EMPTY_TOP_RATED)
+      : Promise.resolve(EMPTY_TOP_RATED),
+  ]);
 
   const companies = data.users ?? [];
-  const showTopRated = pageNumber === 1 && !keyword;
 
   return (
     <PageContainer>
@@ -106,7 +112,7 @@ export default async function CompaniesPage({
         placeholder="Search companies by name"
       />
 
-      {showTopRated ? <TopRated companies={companies} /> : null}
+      {showTopRated ? <TopRated companies={topRated.users ?? []} /> : null}
 
       {companies.length ? (
         <ul className="mt-6 flex flex-col gap-3">

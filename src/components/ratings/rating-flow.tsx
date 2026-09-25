@@ -84,6 +84,7 @@ export function RatingFlow({
       for (const key of invalidate) {
         void queryClient.invalidateQueries({ queryKey: key });
       }
+      void queryClient.invalidateQueries({ queryKey: ["topRated"] });
       router.refresh();
       setDone(true);
     },

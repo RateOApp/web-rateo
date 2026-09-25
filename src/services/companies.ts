@@ -1,6 +1,13 @@
 import { api } from '@/lib/api/client';
 import { companyListQuery, type CompanyListParams } from '@/services/params';
-import { normaliseReviews, type Review, type ReviewsResponse, type User, type UsersResponse } from '@/types/api';
+import {
+  normaliseReviews,
+  type Review,
+  type ReviewsResponse,
+  type TopRatedResponse,
+  type User,
+  type UsersResponse,
+} from '@/types/api';
 
 export type { CompanyListParams } from '@/services/params';
 export { normaliseReviews } from '@/types/api';
@@ -25,5 +32,12 @@ export const companiesService = {
 
   reviews(id: string): Promise<Review[]> {
     return api.get<ReviewsResponse>(`/reviews/${id}`).then((r) => normaliseReviews(r.data));
+  },
+
+  /** `GET /users/top-rated?role=company&limit=…` - server-ranked, render as-is. */
+  topRated(limit = 5): Promise<TopRatedResponse> {
+    return api
+      .get<TopRatedResponse>('/users/top-rated', { params: { role: 'company', limit: String(limit) } })
+      .then((r) => r.data);
   },
 };

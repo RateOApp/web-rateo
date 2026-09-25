@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type ShareButtonProps = {
   /** Path on this origin, e.g. `/jobs/abc123`. */
@@ -13,6 +14,12 @@ type ShareButtonProps = {
   label?: string;
   variant?: "default" | "outline" | "ghost" | "secondary";
   className?: string;
+  /**
+   * `row` places Share and Copy link side by side (inline toolbars);
+   * `column` stacks Copy link directly beneath Share, each taking the full
+   * width - use this inside narrow cards where the buttons are `w-full`.
+   */
+  direction?: "row" | "column";
 };
 
 /**
@@ -31,6 +38,7 @@ export function ShareButton({
   label = "Share",
   variant = "outline",
   className,
+  direction = "row",
 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -72,7 +80,12 @@ export function ShareButton({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className={cn(
+        "flex gap-2",
+        direction === "column" ? "w-full flex-col items-stretch" : "items-center",
+      )}
+    >
       <Button
         type="button"
         variant={variant}

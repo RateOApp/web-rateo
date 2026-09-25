@@ -10,7 +10,8 @@ import { PageContainer } from "@/components/layout/page-container";
 import { CardListSkeleton } from "@/components/shared/card-list-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
-import { useCompanies } from "@/hooks/use-companies";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCompanies, useTopRatedCompanies } from "@/hooks/use-companies";
 import { useMe } from "@/hooks/use-me";
 import type { User } from "@/types/api";
 
@@ -34,7 +35,8 @@ export function ExploreIndividual({
   const companies = useCompanies(keyword ? { keyword } : {});
   const pages = companies.data?.pages ?? [];
   const list = pages.flatMap((page) => page.users ?? []);
-  const firstPage = pages[0]?.users ?? [];
+  const topRated = useTopRatedCompanies(5);
+  const topRatedCompanies = topRated.data?.users ?? [];
 
   return (
     <VerificationGate
@@ -92,7 +94,11 @@ export function ExploreIndividual({
           )
         ) : (
           <>
-            <TopRatedCompanies companies={firstPage} />
+            {topRated.isLoading && !topRated.data ? (
+              <TopRatedCompaniesSkeleton />
+            ) : (
+              <TopRatedCompanies companies={topRatedCompanies} />
+            )}
 
             <section>
               <h2 className="mb-3 text-lg font-bold text-brand-900">All companies</h2>
@@ -131,5 +137,23 @@ export function ExploreIndividual({
         ) : null}
       </PageContainer>
     </VerificationGate>
+  );
+}
+
+/** Placeholder strip shown while the top-rated companies fetch is in flight. */
+function TopRatedCompaniesSkeleton() {
+  return (
+    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6" aria-hidden="true">
+      {Array.from({ length: 3 }, (_, index) => (
+        <div
+          key={index}
+          className="flex h-48 w-56 shrink-0 flex-col gap-2 rounded-2xl border border-border bg-white p-4"
+        >
+          <Skeleton className="size-10 rounded-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-3.5 w-1/2" />
+        </div>
+      ))}
+    </div>
   );
 }

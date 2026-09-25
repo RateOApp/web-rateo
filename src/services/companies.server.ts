@@ -4,6 +4,7 @@ import {
   normaliseReviews,
   type Review,
   type ReviewsResponse,
+  type TopRatedResponse,
   type User,
   type UsersResponse,
 } from '@/types/api';
@@ -25,5 +26,10 @@ export const companiesServer = {
 
   async reviews(id: string, init?: ServerFetchInit): Promise<Review[]> {
     return normaliseReviews(await serverFetch<ReviewsResponse>(`reviews/${id}`, init));
+  },
+
+  /** `GET /users/top-rated?role=company&limit=…` - server-ranked, render as-is. */
+  topRated(limit = 5, init?: ServerFetchInit): Promise<TopRatedResponse> {
+    return serverFetch<TopRatedResponse>(`users/top-rated?role=company&limit=${limit}`, init);
   },
 };

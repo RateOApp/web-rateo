@@ -130,10 +130,22 @@ export function participationLabel(status: ParticipationStatus | undefined): str
 /* Ranking                                                                    */
 /* -------------------------------------------------------------------------- */
 
+/** A null/missing participationScore ('not_established' — never rated anyone
+ * yet) counts as neutral, not a perfect score. */
+const NEUTRAL_PARTICIPATION = 50;
+
 /**
  * 50/50 blend of rating and participation, mirroring `topRatedScore` in
- * `app-rateo/src/utils/rating.js`. A missing participation score counts as 100
- * ("has not missed anything yet"), so only genuinely lapsed accounts sink.
+ * `app-rateo/src/utils/rating.js`. A missing participation score counts as
+ * NEUTRAL_PARTICIPATION (50 — "hasn't earned or missed anything"), so it
+ * lands in the middle rather than outranking genuinely active accounts.
+ *
+ * The canonical "top rated" ranking now lives server-side
+ * (`GET /users/top-rated`, ranked across every account of a role, not just
+ * whatever page happens to be loaded) - clients render that response as-is.
+ * `topRatedScore`/`compareTopRated` here only order the residual PAGED list
+ * (e.g. "All companies" / "All talents" once the server's top picks are
+ * excluded); they are no longer used to pick or rank the top shelf itself.
  */
 export function topRatedScore(
   rating: number | null | undefined,
@@ -141,7 +153,9 @@ export function topRatedScore(
 ): number {
   const ratingNorm = (Math.max(0, Math.min(5, Number(rating) || 0)) / 5) * 100;
   const participation =
-    typeof participationScore === 'number' ? Math.max(0, Math.min(100, participationScore)) : 100;
+    typeof participationScore === 'number'
+      ? Math.max(0, Math.min(100, participationScore))
+      : NEUTRAL_PARTICIPATION;
   return 0.5 * ratingNorm + 0.5 * participation;
 }
 
@@ -153,7 +167,7 @@ export function compareTopRated(a: User, b: User): number {
   if ((b.overallRating ?? 0) !== (a.overallRating ?? 0)) {
     return (b.overallRating ?? 0) - (a.overallRating ?? 0);
   }
-  return (b.participationScore ?? 100) - (a.participationScore ?? 100);
+  return (b.participationScore ?? NEUTRAL_PARTICIPATION) - (a.participationScore ?? NEUTRAL_PARTICIPATION);
 }
 
 /* -------------------------------------------------------------------------- */

@@ -103,7 +103,12 @@ export function JobActions({
   // all three viewer states below, so it is built once.
   const shareRow = (
     <>
-      <ShareButton path={jobHref} title={shareTitle} className="h-11 w-full" />
+      <ShareButton
+        path={jobHref}
+        title={shareTitle}
+        direction="column"
+        className="h-11 w-full"
+      />
       <OpenInAppButton path={jobHref} className="h-11 w-full" />
     </>
   );

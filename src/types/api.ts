@@ -92,6 +92,8 @@ export type User = {
   kycStatus?: KycStatus;
   kyc?: Kyc;
   overallRating?: number;
+  reviewCount?: number;
+  topRatedScore?: number;
   participationScore?: number;
   participationStatus?: ParticipationStatus;
   createdAt?: string;
@@ -131,6 +133,14 @@ export type User = {
 export type Company = User & { role: 'company' };
 
 export type UsersResponse = Paginated & { users: User[] };
+
+/** `GET /users/top-rated?role=…&limit=…` - server-ranked, no client sort needed. */
+export type TopRatedResponse = {
+  users: User[];
+  role: 'company' | 'individual';
+  limit: number;
+  generatedAt: string;
+};
 
 /**
  * Body of `PUT /users/profile`. Every field is optional - the controller only

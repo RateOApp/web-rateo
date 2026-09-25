@@ -3,16 +3,16 @@ import { ParticipationChip } from "@/components/dashboard/participation-chip";
 import { ParticipationRing } from "@/components/dashboard/participation-ring";
 import { StarRating } from "@/components/shared/star-rating";
 import { UserAvatar } from "@/components/shared/user-avatar";
-import { compareTopRated, formatRating } from "@/lib/rating";
+import { formatRating } from "@/lib/rating";
 import type { User } from "@/types/api";
 
 /**
- * The five best-ranked companies on the first page, by the same
- * rating + participation blend the mobile app uses (`topRatedScore`), so a
- * five-star company that stops rating its people cannot camp at the top.
+ * The best-ranked companies, as ranked by the server
+ * (`GET /users/top-rated`). Rendered exactly as given - no client-side
+ * sort or slice - so the ranking always matches the rest of the app.
  */
 export function TopRatedCompanies({ companies }: { companies: User[] }) {
-  const top = [...companies].sort(compareTopRated).slice(0, 5);
+  const top = companies;
   if (!top.length) return null;
 
   return (

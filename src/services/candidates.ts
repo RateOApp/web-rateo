@@ -1,5 +1,12 @@
 import { api } from '@/lib/api/client';
-import type { ApiMessage, Job, JobApplicantStatus, User, UsersResponse } from '@/types/api';
+import type {
+  ApiMessage,
+  Job,
+  JobApplicantStatus,
+  TopRatedResponse,
+  User,
+  UsersResponse,
+} from '@/types/api';
 import type {
   CandidatePreferences,
   CompanyEmployeesResponse,
@@ -30,6 +37,15 @@ export const candidatesService = {
     return api
       .get<UsersResponse>('/users', {
         params: { role: 'individual', keyword: keyword.trim(), pageNumber: '1' },
+      })
+      .then((r) => r.data);
+  },
+
+  /** `GET /users/top-rated?role=individual&limit=…` - server-ranked, render as-is. */
+  topRated(limit = 3): Promise<TopRatedResponse> {
+    return api
+      .get<TopRatedResponse>('/users/top-rated', {
+        params: { role: 'individual', limit: String(limit) },
       })
       .then((r) => r.data);
   },

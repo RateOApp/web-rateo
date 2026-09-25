@@ -7,14 +7,14 @@ import { ParticipationRing } from "@/components/dashboard/participation-ring";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StarRating } from "@/components/shared/star-rating";
 import { UserAvatar } from "@/components/shared/user-avatar";
-import { compareTopRated, formatRating } from "@/lib/rating";
+import { formatRating } from "@/lib/rating";
 import { cn } from "@/lib/utils";
 import { candidateName, candidateTitleLabel, type Candidate } from "@/types/candidates";
 
 /**
- * The three best-ranked talents, by the same rating + participation blend the
- * mobile app uses (`topRatedScore`), so a five-star candidate who stops rating
- * their employer cannot camp at the top.
+ * The best-ranked talents, as ranked by the server
+ * (`GET /users/top-rated`). Rendered exactly as given - no client-side
+ * sort or slice.
  */
 export function TopRatedTalents({
   candidates,
@@ -26,7 +26,7 @@ export function TopRatedTalents({
   dimmed?: boolean;
   onOpen?: (id: string) => boolean;
 }) {
-  const top = [...candidates].sort(compareTopRated).slice(0, 3);
+  const top = candidates;
 
   return (
     <section>

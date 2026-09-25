@@ -30,3 +30,14 @@ export function useCompanyReviews(id: string | undefined) {
     enabled: Boolean(id),
   });
 }
+
+/** `GET /users/top-rated?role=company` - server-ranked, no client sort needed. */
+export function useTopRatedCompanies(limit = 5) {
+  return useQuery({
+    queryKey: ['topRated', 'company', limit] as const,
+    queryFn: () => companiesService.topRated(limit),
+    staleTime: 30_000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+}
