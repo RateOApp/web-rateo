@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Providers } from "@/providers/providers";
 import "./globals.css";
 
@@ -11,6 +12,11 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+// Google Analytics 4 measurement ID (G-XXXXXXXXXX). Inlined at build time, so
+// it must be set in the Vercel project env before the production build runs.
+// Leave it unset locally / on previews and no analytics script is rendered.
+const gaId = process.env.NEXT_PUBLIC_GA_ID?.trim();
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
@@ -53,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-dvh flex-col bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
+      {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
     </html>
   );
 }
