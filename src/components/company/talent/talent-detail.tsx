@@ -23,13 +23,14 @@ import { useUserReviews } from "@/hooks/use-reviews";
 import { SAVED_CANDIDATES_KEY, useSavedCandidates } from "@/hooks/use-saved-candidates";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { INDIVIDUAL_CRITERIA } from "@/lib/rating-criteria";
-import { formatRating } from "@/lib/rating";
+import { formatRating, hasRating } from "@/lib/rating";
 import { cn } from "@/lib/utils";
 import { candidatesService } from "@/services/candidates";
 import { usersService } from "@/services/users";
 import type { User } from "@/types/api";
 import {
   candidateName,
+  candidateRating,
   candidateTitleLabel,
   type Candidate,
   type TalentExperience,
@@ -104,7 +105,13 @@ export function TalentDetail({
   );
 
   const name = candidate ? candidateName(candidate) : "Talent";
-  const rating = candidate?.overallRating ?? null;
+  // `GET /users/:id` omits `overallRating` (and other endpoints send `0` as a
+  // placeholder), so fall back to the reviews average - the same source as the
+  // breakdown below.
+  const profileRating = candidate ? candidateRating(candidate) : null;
+  const reviewsAverage =
+    reviews.data && reviews.data.totalReviews > 0 ? reviews.data.averageRating : null;
+  const rating = hasRating(profileRating) ? profileRating : reviewsAverage;
   const skills = (candidate?.skills ?? []).filter((skill) => Boolean(skill?.trim()));
 
   async function handleSaveToggle() {
