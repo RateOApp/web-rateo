@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 
 import { FormAlert } from '@/components/auth/form-alert';
-import { DocumentField } from '@/components/company/kyc/kyc-address-step';
 import { SelfieCapture } from '@/components/profile/selfie-capture';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,13 +13,8 @@ import { cn } from '@/lib/utils';
 
 export type MethodValues = {
   cacNumber: string;
-  cacCertificate: string | null;
-  /** 11-digit NIN of the person performing this verification (the attester). */
-  attesterNin: string;
   attesterSelfieUrl: string | null;
 };
-
-const NIN_PATTERN = /^\d{11}$/;
 
 type KycMethodStepProps = {
   values: MethodValues;
@@ -40,7 +34,7 @@ type KycMethodStepProps = {
  * manual path is never removed - CAC records that Dojah cannot resolve are
  * common enough that a dead end here would strand real companies. The live
  * selfie is required on the manual path specifically: it ties a face to the
- * authorization declaration, which a certificate upload alone cannot do.
+ * authorization declaration, which a registration number alone cannot do.
  */
 export function KycMethodStep({
   values,
@@ -56,8 +50,8 @@ export function KycMethodStep({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (submitting) return;
-    if (!values.cacNumber.trim() || !values.cacCertificate || !values.attesterSelfieUrl) {
-      setLocalError('Please provide your CAC details and take a live selfie');
+    if (!values.cacNumber.trim() || !values.attesterSelfieUrl) {
+      setLocalError('Please enter your CAC registration number and take a live selfie');
       return;
     }
     setLocalError(null);
@@ -98,42 +92,6 @@ export function KycMethodStep({
               placeholder="Enter CAC number"
               onChange={(event) =>
                 onChange({ cacNumber: event.target.value.replace(/\D/g, '').slice(0, 9) })
-              }
-              className="h-11"
-            />
-          </div>
-
-          <DocumentField
-            id="cac-certificate"
-            label="CAC certificate (png, pdf, Jpg. Max 5Mb)"
-            value={values.cacCertificate}
-            disabled={submitting}
-            onChange={(url) => onChange({ cacCertificate: url })}
-          />
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="attester-nin" className="text-brand-900">
-              Your NIN (the person verifying)
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              11-digit National Identification Number of the person submitting this
-              verification.
-            </p>
-            <Input
-              id="attester-nin"
-              value={values.attesterNin}
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={11}
-              disabled={submitting}
-              placeholder="Enter your 11-digit NIN"
-              aria-invalid={
-                values.attesterNin.length > 0 && !NIN_PATTERN.test(values.attesterNin)
-                  ? true
-                  : undefined
-              }
-              onChange={(event) =>
-                onChange({ attesterNin: event.target.value.replace(/\D/g, '').slice(0, 11) })
               }
               className="h-11"
             />

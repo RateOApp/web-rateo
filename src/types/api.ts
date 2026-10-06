@@ -116,6 +116,12 @@ export type User = {
   jobPreferences?: JobPreferences;
   jobTitle?: string;
   resume?: string;
+  profileCompletion?: {
+    complete: boolean;
+    done: number;
+    total: number;
+    items: { key: string; label: string; done: boolean }[];
+  } | null;
   savedJobs?: string[];
 
   /* company */

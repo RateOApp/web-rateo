@@ -5,8 +5,8 @@
 
 export const COMPANY_SIZES = [
   'Small (1 - 10 employees)',
-  'Medium (20 - 50 employees)',
-  'Large (50 - 200 employees)',
+  'Medium (11 - 50 employees)',
+  'Large (51 - 200 employees)',
   'Enterprise (200+ employees)',
 ] as const;
 

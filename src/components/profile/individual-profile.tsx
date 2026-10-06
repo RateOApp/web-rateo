@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 import { ParticipationStatCard } from '@/components/dashboard/participation-stat-card';
+import { ProfileCompletionCard } from '@/components/profile/profile-completion-card';
 import { UserAvatar } from '@/components/shared/user-avatar';
 import { Badge } from '@/components/ui/badge';
 import { useMe } from '@/hooks/use-me';
@@ -108,6 +109,8 @@ export function IndividualProfile({ user: initialUser }: { user: User }) {
       </header>
 
       <ParticipationStatCard rating={averageRating} score={score} status={status} />
+
+      <ProfileCompletionCard user={user} />
 
       {/* ---- bio --------------------------------------------------------- */}
       <section className="relative rounded-2xl border border-border bg-card p-4 sm:p-6">

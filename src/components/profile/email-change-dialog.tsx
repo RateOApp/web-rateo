@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, ChevronRight, Loader2, Lock, Mail, ShieldCheck } from 'lucide-react';
 
+import { EmailSuggestion } from '@/components/auth/email-suggestion';
 import { FormAlert } from '@/components/auth/form-alert';
 import { OtpInput } from '@/components/auth/otp-input';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { suggestEmailFix } from '@/lib/email-typo';
 import { usersService } from '@/services/users';
 
 const RESEND_SECONDS = 60;
@@ -63,6 +65,7 @@ function EmailChangeBody({
   const [step, setStep] = useState<Step>('choose');
   const [oldCode, setOldCode] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [suggestion, setSuggestion] = useState<string | null>(null);
   const [newCode, setNewCode] = useState('');
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -324,8 +327,20 @@ function EmailChangeBody({
             value={newEmail}
             disabled={submitting}
             aria-label="New email address"
-            onChange={(event) => setNewEmail(event.target.value)}
+            onChange={(event) => {
+              setNewEmail(event.target.value);
+              setSuggestion(null);
+            }}
+            onBlur={() => setSuggestion(suggestEmailFix(newEmail))}
             className="h-11"
+          />
+          <EmailSuggestion
+            suggestion={suggestion}
+            className="-mt-3"
+            onAccept={() => {
+              if (suggestion) setNewEmail(suggestion);
+              setSuggestion(null);
+            }}
           />
           <FormAlert>{error}</FormAlert>
           <div className="flex flex-col gap-2">

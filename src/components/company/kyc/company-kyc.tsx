@@ -21,7 +21,6 @@ import {
   kycAdminComment,
   kycService,
 } from '@/services/kyc';
-import { attestationKnownMissing } from '@/types/company';
 import type { KycStatus, User } from '@/types/api';
 
 type Step = 'authorization' | 'intro' | 'address' | 'method' | 'done';
@@ -29,12 +28,10 @@ type Step = 'authorization' | 'intro' | 'address' | 'method' | 'done';
 /**
  * Business KYC.
  *
- * Order is authorization -> intro -> address -> method, and the authorization
- * step is the only one that can be skipped: the backend gates both verification
- * paths on it but the user document does not always report whether it was
- * signed. So the flow is optimistic - it starts at the intro unless the
- * document explicitly says the attestation is unaccepted - and treats a
- * `400 ATTESTATION_REQUIRED` from the submit as the authoritative answer,
+ * Order is authorization -> intro -> address -> method. The authorization step
+ * is always first on every attempt (mirrors the mobile app; the server rewrites
+ * the attestation on each attempt), including the rejected -> retry path. The
+ * `400 ATTESTATION_REQUIRED` handling on submit stays as a safety net only,
  * dropping the user back onto the declaration with their form intact.
  *
  * Form state lives here rather than in the steps so stepping back and forth
@@ -47,9 +44,7 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
   const { data } = useMe();
   const user = data ?? initialUser;
 
-  const [step, setStep] = useState<Step>(() =>
-    attestationKnownMissing(user) ? 'authorization' : 'intro',
-  );
+  const [step, setStep] = useState<Step>('authorization');
   const [retrying, setRetrying] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,28 +55,18 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
     address: user.location ?? '',
     state: '',
     city: '',
-    proofOfAddress: null,
   });
   const [method, setMethod] = useState<MethodValues>({
     cacNumber: '',
-    cacCertificate: null,
-    attesterNin: '',
     attesterSelfieUrl: null,
   });
 
   const status: KycStatus = user.kycStatus ?? 'none';
 
   async function handleSubmit() {
-    if (
-      submitting ||
-      !address.proofOfAddress ||
-      !method.cacCertificate ||
-      !method.attesterSelfieUrl
-    ) {
-      return;
-    }
-    if (!/^\d{11}$/.test(method.attesterNin)) {
-      setError('Please enter a valid 11-digit NIN of the person verifying');
+    if (submitting || !method.attesterSelfieUrl) return;
+    if (!method.cacNumber.trim()) {
+      setError('Please enter your CAC registration number');
       return;
     }
 
@@ -93,10 +78,7 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
         address: address.address.trim(),
         state: address.state.trim(),
         city: address.city.trim(),
-        proofOfAddress: address.proofOfAddress,
         cacNumber: method.cacNumber.trim(),
-        cacCertificate: method.cacCertificate,
-        attesterNin: method.attesterNin,
         attesterSelfieUrl: method.attesterSelfieUrl,
       });
       // The server has already set `pending`; refetch rather than writing the
@@ -137,7 +119,7 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
         adminComment={kycAdminComment(user)}
         onRetry={() => {
           setRetrying(true);
-          setStep(attestationKnownMissing(user) ? 'authorization' : 'address');
+          setStep('authorization');
         }}
       />
     );
@@ -215,8 +197,8 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
         <p className="mt-4 text-sm font-medium text-brand-900">Requirements</p>
         <ul className="mt-1 space-y-1 text-sm text-muted-foreground">
           <li>• Company Address</li>
-          <li>• Proof of Address</li>
-          <li>• CAC documents</li>
+          <li>• CAC registration number</li>
+          <li>• Live selfie of the person verifying</li>
         </ul>
         <Button
           className="mt-5 h-11 w-full bg-brand-700 text-white sm:w-auto"

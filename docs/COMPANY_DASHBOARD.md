@@ -269,7 +269,7 @@ industry, rating, companySize; ParticipationStatCard; KYC banner; About card (de
 ### Edit `/dashboard/profile/edit` (company branch)
 Logo upload (`POST /users/avatar` field `image`), company name, industry combobox (31; invalid
 → **Please pick your industry from the list.**), company size select [Small (1 - 10
-employees), Medium (20 - 50 employees), Large (50 - 200 employees), Enterprise (200+
+employees), Medium (11 - 50 employees), Large (51 - 200 employees), Enterprise (200+
 employees)], address, phone and email with the same gated flows as individuals (reuse
 `EmailChangeDialog` / `IdRequestDialog`). Save `PUT /users/profile { companyName, industry,
 companySize, address, avatar }` → **Profile updated successfully**.
@@ -294,22 +294,20 @@ submit KYC again.** Pending → status card. Order: Authorization → Intro → 
   `ATTESTATION_REQUIRED` tells you it is missing; otherwise proceed).
 - Intro: **Complete your KYC** / **Verify your company's identity to keep Rateo safe and
   trusted. Once approved, you'll unlock full access to candidate profiles.** Card **Get the
-  verified badge** (**Undone**): **• Company Address**, **• Proof of Address**, **• CAC
-  documents**; **Let's go**.
+  verified badge** (**Undone**): **• Company Address**, **• CAC registration
+  number**, **• Live selfie of the person verifying**; **Let's go**.
 - Address step: **Get verified badge** / **Please provide the following to get verified.**
   Company Address; State select (37 states + **Other (type it myself)** + **Abroad**); LGA
   select from `src/lib/constants/nigeria-lgas.ts` (port from
-  `app-rateo/src/constants/nigeriaStatesLGA.js`; include **Other (type your LGA)**); **Upload
-  proof of address (png, pdf, Jpg. Max 5Mb)** → `POST /upload`. Validation **Please provide
+  `app-rateo/src/constants/nigeriaStatesLGA.js`; include **Other (type your LGA)**). No proof-of-address upload (dropped Oct 2026). Validation **Please provide
   all address details**.
 - Method step: **Verify instantly** → `/dashboard/kyc/dojah?flow=business` (`POST
   /users/kyc/dojah/init { flow: 'business' }`); link **Verify with team review instead** →
-  **Verify with team review**: **CAC registration number** (≤9 digits), **CAC certificate
-  (png, pdf, Jpg. Max 5Mb)**, **Live selfie of you (the person verifying)** (**Front camera
+  **Verify with team review**: **CAC registration number** (≤9 digits), **Live selfie of you (the person verifying)** (**Front camera
   only — this confirms who submitted this verification.**, reuse `SelfieCapture` → `POST
-  /upload`), **Complete Verification**. Validation **Please provide your CAC details and take
-  a live selfie**. `POST /users/kyc { address, state, city, proofOfAddress, cacNumber,
-  cacCertificate, attesterSelfieUrl }`. Success **Thank you! We will verify and get back to
+  /upload`), **Complete Verification**. Validation **Please enter your CAC registration number and
+  take a live selfie**. No CAC certificate upload or attester NIN (dropped Oct 2026). `POST /users/kyc { address, state, city, cacNumber,
+  attesterSelfieUrl }`. Success **Thank you! We will verify and get back to
   you.** / **Our team will go through the details you've provided. This usually takes
   24hours.** Errors: `ATTESTATION_REQUIRED` → return to the authorization step;
   `ATTESTER_SELFIE_REQUIRED` → highlight the selfie.

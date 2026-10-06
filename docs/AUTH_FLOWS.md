@@ -144,8 +144,8 @@ Designer, Graphic Designer, Designer, Marketing Manager, Digital Marketer, Conte
 Sales Executive, Business Analyst, Business Development Manager, Accountant, Financial
 Analyst, Human Resources Manager, Customer Support Specialist, Operations Manager
 
-Company sizes (profile edit, later): Small (1 - 10 employees), Medium (20 - 50 employees),
-Large (50 - 200 employees), Enterprise (200+ employees).
+Company sizes (profile edit, later): Small (1 - 10 employees), Medium (11 - 50 employees),
+Large (51 - 200 employees), Enterprise (200+ employees).
 Genders (profile edit, later): Male, Female, Other, Prefer not to say.
 Nigerian states: Abia, Adamawa, Akwa Ibom, Anambra, Bauchi, Bayelsa, Benue, Borno, Cross
 River, Delta, Ebonyi, Edo, Ekiti, Enugu, Gombe, Imo, Jigawa, Kaduna, Kano, Katsina, Kebbi,

@@ -113,7 +113,8 @@ export type AttestationResponse = {
 };
 
 /**
- * `POST /users/kyc` body for a company (team review).
+ * `POST /users/kyc` body for a company (team review). No document uploads or
+ * attester NIN: only the address, CAC number and the attester's live selfie.
  *
  * `city` carries the LGA - the wire field kept its old name when the mobile
  * screen switched from a free-text city to the LGA picker. The controller
@@ -124,11 +125,7 @@ export type BusinessKycPayload = {
   address: string;
   state: string;
   city: string;
-  proofOfAddress: string;
   cacNumber: string;
-  cacCertificate: string;
-  /** 11-digit NIN of the person submitting; the server rejects without it. */
-  attesterNin: string;
   /** Live selfie of the person submitting; the server rejects without it. */
   attesterSelfieUrl: string;
 };

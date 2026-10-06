@@ -9,6 +9,7 @@ import { HomeRatingCard } from "@/components/feed/home-rating-card";
 import { JobFeed } from "@/components/feed/job-feed";
 import { MonthlyPromptCard } from "@/components/feed/monthly-prompt-card";
 import { PageContainer } from "@/components/layout/page-container";
+import { ProfileCompletionCard } from "@/components/profile/profile-completion-card";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { useMe } from "@/hooks/use-me";
@@ -57,6 +58,8 @@ export function IndividualHome({
         status={participation.data?.participationStatus ?? null}
         outstanding={participation.data?.outstanding ?? 0}
       />
+
+      {user.kycStatus === 'verified' ? <ProfileCompletionCard user={user} /> : null}
 
       <MonthlyPromptCard user={user} />
 

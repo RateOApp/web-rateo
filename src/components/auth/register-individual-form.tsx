@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { AuthCard } from "@/components/auth/auth-card";
 import { FormAlert } from "@/components/auth/form-alert";
+import { EmailSuggestion } from "@/components/auth/email-suggestion";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PhoneField } from "@/components/auth/phone-field";
@@ -18,6 +19,7 @@ import { SocialSection } from "@/components/auth/social-section";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { describedBy, FieldShell, TextField } from "@/components/auth/text-field";
 import { authErrorMessage } from "@/lib/auth-error";
+import { suggestEmailFix } from "@/lib/email-typo";
 import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from "@/lib/referral-code";
 import { PASSWORDS_DO_NOT_MATCH, passwordSchema } from "@/lib/password";
 import { authService } from "@/services/auth";
@@ -59,10 +61,12 @@ export function RegisterIndividualForm({
 } = {}) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
 
   const {
     register,
     control,
+    setValue,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
@@ -77,6 +81,8 @@ export function RegisterIndividualForm({
       referralCode: initialReferralCode,
     },
   });
+
+  const emailField = register("email");
 
   // `useWatch` (not `watch`) so the React Compiler can still memoize this tree.
   const password = useWatch({ control, name: "password" });
@@ -157,7 +163,22 @@ export function RegisterIndividualForm({
           spellCheck={false}
           placeholder="Enter your email address"
           error={errors.email?.message}
-          {...register("email")}
+          {...emailField}
+          onChange={(e) => {
+            void emailField.onChange(e);
+            setEmailSuggestion(null);
+          }}
+          onBlur={(e) => {
+            void emailField.onBlur(e);
+            setEmailSuggestion(suggestEmailFix(e.target.value));
+          }}
+        />
+        <EmailSuggestion
+          suggestion={emailSuggestion}
+          onAccept={() => {
+            setValue("email", emailSuggestion ?? "", { shouldValidate: true, shouldDirty: true });
+            setEmailSuggestion(null);
+          }}
         />
 
         <Controller
