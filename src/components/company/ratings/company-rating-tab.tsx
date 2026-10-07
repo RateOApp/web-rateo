@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ContractEndCard } from '@/components/company/ratings/contract-end-card';
 import { ParticipationStatCard } from '@/components/dashboard/participation-stat-card';
 import { MetricsBars, metricsFromBreakdown } from '@/components/ratings/metrics-bars';
+import { MonthAccordion } from '@/components/ratings/month-accordion';
 import { ReviewCard } from '@/components/ratings/review-card';
 import {
   HIDDEN_STILL_EMPLOYED,
@@ -17,6 +18,7 @@ import { companyFeedback } from '@/lib/company-feedback';
 import { toDate } from '@/lib/format';
 import { formatRating } from '@/lib/rating';
 import { COMPANY_CRITERIA } from '@/lib/rating-criteria';
+import { groupReviewsByMonth } from '@/lib/reviews-by-month';
 import type { ParticipationStatus, User } from '@/types/api';
 import type { ReviewItem, ReviewsSummary } from '@/types/reviews';
 
@@ -43,6 +45,7 @@ export function CompanyRatingTab({
   participationStatus,
 }: CompanyRatingTabProps) {
   const [openReview, setOpenReview] = useState<ReviewItem | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   if (isLoading && !summary) return <CardListSkeleton rows={3} />;
 
@@ -53,6 +56,8 @@ export function CompanyRatingTab({
   const reviews = [...(summary?.reviews ?? [])].sort(
     (a, b) => (toDate(b.createdAt)?.getTime() ?? 0) - (toDate(a.createdAt)?.getTime() ?? 0),
   );
+  const groups = groupReviewsByMonth(reviews);
+  const isOpen = (key: string, idx: number) => expanded[key] ?? idx === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -88,13 +93,28 @@ export function CompanyRatingTab({
       <ContractEndCard companyId={company._id} />
 
       {reviews.length ? (
-        <ul className="flex flex-col gap-3">
-          {reviews.map((review) => (
-            <li key={review._id}>
-              <ReviewCard review={review} variant="about-my-company" onOpen={setOpenReview} />
-            </li>
+        <div className="flex flex-col gap-3">
+          {groups.map((g, idx) => (
+            <MonthAccordion
+              key={g.key}
+              label={g.label}
+              subtitle={g.hiddenCount ? `${g.hiddenCount} hidden until contract ends` : undefined}
+              count={g.reviews.length}
+              expanded={isOpen(g.key, idx)}
+              onToggle={() =>
+                setExpanded((prev) => ({ ...prev, [g.key]: !(prev[g.key] ?? idx === 0) }))
+              }
+            >
+              <ul className="flex flex-col gap-2">
+                {g.reviews.map((r) => (
+                  <li key={r._id}>
+                    <ReviewCard review={r} variant="about-my-company" onOpen={setOpenReview} />
+                  </li>
+                ))}
+              </ul>
+            </MonthAccordion>
           ))}
-        </ul>
+        </div>
       ) : (
         <p className="rounded-2xl border border-border bg-white p-8 text-center text-sm text-muted-foreground">
           No reviews yet.
