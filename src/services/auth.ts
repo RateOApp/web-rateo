@@ -20,6 +20,8 @@ export type LoginPayload = { email: string; password: string };
 export type ReferralFields = {
   referralCode?: string;
   referralSource?: ReferralSource;
+  /** Set server-side from the `rateo_scaloo_ref` cookie; forms never send it. */
+  scalooRef?: string;
 };
 
 /** A register / social-login response, plus whether a referral was recorded. */

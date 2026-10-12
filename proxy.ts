@@ -1,6 +1,11 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import {
+  readScalooRefFromSearchParams,
+  SCALOO_COOKIE,
+  scalooCookieOptions,
+} from '@/lib/attribution';
 import { clerkServerEnabled } from '@/lib/clerk';
 
 /**
@@ -48,10 +53,18 @@ function isIgnored(pathname: string): boolean {
   );
 }
 
+/** Last-touch attribution: a valid `sl_cid`/`sc_ref` overwrites the cookie. */
+function withScalooCookie(res: NextResponse, ref: string | null): NextResponse {
+  if (ref) res.cookies.set(SCALOO_COOKIE, ref, scalooCookieOptions());
+  return res;
+}
+
 function guard(req: NextRequest): NextResponse {
   const { pathname, search } = req.nextUrl;
 
   if (isIgnored(pathname)) return NextResponse.next();
+
+  const scalooRef = readScalooRefFromSearchParams(req.nextUrl.searchParams);
 
   const hasToken = Boolean(req.cookies.get(COOKIE_TOKEN)?.value);
 
@@ -64,17 +77,17 @@ function guard(req: NextRequest): NextResponse {
     url.pathname = '/login';
     url.search = '';
     url.searchParams.set('next', `${pathname}${search}`);
-    return NextResponse.redirect(url);
+    return withScalooCookie(NextResponse.redirect(url), scalooRef);
   }
 
   if (hasToken && AUTH_ONLY_PAGES.includes(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard';
     url.search = '';
-    return NextResponse.redirect(url);
+    return withScalooCookie(NextResponse.redirect(url), scalooRef);
   }
 
-  return NextResponse.next();
+  return withScalooCookie(NextResponse.next(), scalooRef);
 }
 
 const handler = clerkServerEnabled()

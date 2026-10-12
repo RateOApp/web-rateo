@@ -6,6 +6,11 @@ import { toast } from "sonner";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/constants/stores";
 import { cn } from "@/lib/utils";
 
+// TODO(singular-links): once the Singular Links domain (e.g. rateo.sng.link) is
+// confirmed, each href becomes that Singular Link with `?sl_cid=<value of the
+// rateo_scaloo_ref cookie>` appended, so web attribution survives the store
+// install. The cookie is httpOnly, so the value must be passed in as a prop
+// from a server component (cookies()) rather than read here.
 const STORES = [
   { href: APP_STORE_URL, label: "Download on the App Store", icon: Apple },
   { href: PLAY_STORE_URL, label: "Get it on Google Play", icon: Play },

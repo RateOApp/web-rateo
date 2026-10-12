@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { isValidScalooRef, SCALOO_COOKIE } from '@/lib/attribution';
 import { getApiBaseUrl } from '@/lib/env';
 import { COOKIE_ROLE, COOKIE_TOKEN, isRole, setSessionCookies, type Role } from '@/lib/session';
 
@@ -42,6 +43,34 @@ const TOKEN_ISSUING_PATHS = new Set([
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+/**
+ * `POST auth/register` only: add `scalooRef` from the attribution cookie to the
+ * JSON body. Returns the new body text, or null to stream the original body
+ * unchanged (no/invalid cookie, non-JSON, unparsable, or already present).
+ * Never throws - registration must not break over attribution.
+ */
+async function registerBodyWithScalooRef(req: NextRequest): Promise<string | null> {
+  const ref = req.cookies.get(SCALOO_COOKIE)?.value;
+  if (!isValidScalooRef(ref)) return null;
+  if (!(req.headers.get('content-type') ?? '').includes('application/json')) return null;
+
+  let text: string;
+  try {
+    text = await req.text();
+  } catch {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (!isRecord(parsed) || Array.isArray(parsed)) return text;
+    if (parsed.scalooRef !== undefined) return text;
+    return JSON.stringify({ ...parsed, scalooRef: ref });
+  } catch {
+    // Body already consumed - send it back verbatim.
+    return text;
+  }
 }
 
 function buildResponseHeaders(upstream: Response): Headers {
@@ -99,8 +128,15 @@ export async function proxyRequest(
     redirect: 'manual',
   };
   if (sendsBody) {
-    init.body = req.body;
-    init.duplex = 'half';
+    const rewritten =
+      method === 'POST' && path === 'auth/register' ? await registerBodyWithScalooRef(req) : null;
+    if (rewritten !== null) {
+      init.body = rewritten;
+      headers.set('content-length', String(Buffer.byteLength(rewritten)));
+    } else {
+      init.body = req.body;
+      init.duplex = 'half';
+    }
   }
 
   let upstream: Response;

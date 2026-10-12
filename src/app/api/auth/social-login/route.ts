@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 
 import { messageFromBody } from '@/lib/api/errors';
+import { isValidScalooRef, SCALOO_COOKIE } from '@/lib/attribution';
 import { clerkServerEnabled } from '@/lib/clerk';
 import { extractClerkName } from '@/lib/clerk-name';
 import { getApiBaseUrl } from '@/lib/env';
@@ -71,6 +72,10 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const { firstName, lastName } = extractClerkName(user);
 
+  // Attribution comes from the httpOnly cookie set by `proxy.ts`, never the body.
+  const scalooCookie = req.cookies.get(SCALOO_COOKIE)?.value;
+  const scalooRef = isValidScalooRef(scalooCookie) ? scalooCookie : undefined;
+
   const payload = {
     email,
     firstName,
@@ -79,6 +84,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     ...(role ? { role } : {}),
     ...(role === 'company' && companyName ? { companyName } : {}),
     ...(code ? { referralCode: code, referralSource: referralSource ?? 'web' } : {}),
+    ...(scalooRef ? { scalooRef } : {}),
   };
 
   let upstream: Response;

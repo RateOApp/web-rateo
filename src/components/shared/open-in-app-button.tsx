@@ -49,6 +49,10 @@ export function OpenInAppButton({ path, className }: { path: string; className?:
   if (!isAndroid) return null;
 
   function handleClick() {
+    // TODO(singular-links): once the Singular Links domain exists, the Play
+    // Store fallback (and the iOS path) should become the Singular Link with
+    // `?sl_cid=<value of the rateo_scaloo_ref cookie>` appended. The cookie is
+    // httpOnly, so pass the value in as a prop from a server component.
     const fallback = encodeURIComponent(PLAY_STORE_URL);
     window.location.href = `intent://${APP_LINK_HOST}${path}#Intent;scheme=https;package=${ANDROID_PACKAGE};S.browser_fallback_url=${fallback};end`;
   }

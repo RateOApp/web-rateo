@@ -43,6 +43,12 @@ npx tsc --noEmit
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | public | no | Clerk publishable key (same Clerk instance as the mobile app). Empty = no social sign-in |
 | `CLERK_SECRET_KEY` | **server only** | no | Clerk secret key. Needed together with the publishable key for the server-side exchange |
 
+**Attribution cookie (no env var).** A landing URL carrying `?sl_cid=` (or `?sc_ref=`) matching
+`^[A-Za-z0-9_-]{8,64}$` makes `proxy.ts` set the httpOnly `rateo_scaloo_ref` cookie (30 days,
+last touch wins; see `src/lib/attribution.ts`). The `/api` proxy adds it as `scalooRef` to the
+JSON body of `POST auth/register`, and `/api/auth/social-login` adds it to the upstream payload.
+Nothing else reads it; the backend handles the Scaloo postback. No web env var is needed.
+
 Read them through `src/lib/env.ts` (`getApiBaseUrl()`, `getSocketUrl()`, `getAppUrl()`) rather than
 `process.env` — `getApiBaseUrl()` throws a clear error when the variable is missing and strips
 a trailing slash.
