@@ -3,6 +3,13 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  // The production host is a small instance: `next build` compiles fine but the
+  // TypeScript pass gets OOM-killed. Type-check locally / in CI (`npx tsc
+  // --noEmit`) and build there with SKIP_TYPECHECK=1. Off everywhere else.
+  typescript: {
+    ignoreBuildErrors: process.env.SKIP_TYPECHECK === '1',
+  },
+
   images: {
     remotePatterns: [
       // Cloudinary holds every user-uploaded avatar, logo and resume preview.
