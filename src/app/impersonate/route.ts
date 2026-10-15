@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { getApiBaseUrl } from '@/lib/env';
+import { getApiBaseUrl, getAppUrl } from '@/lib/env';
 import {
   COOKIE_IMPERSONATION,
   isRole,
@@ -16,8 +16,31 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
 
+const LOCAL_HOST = /^(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
+/**
+ * Public origin to redirect back to. Behind the production reverse proxy
+ * `req.url` carries the internal origin (localhost:3001), so an absolute
+ * redirect built from it sends the admin's browser to localhost. Prefer the
+ * forwarded host, then NEXT_PUBLIC_APP_URL, and only then the request origin.
+ */
+function publicOrigin(req: NextRequest): string {
+  const fwdHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+  const fwdProto = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || 'https';
+  if (fwdHost && !LOCAL_HOST.test(fwdHost)) return `${fwdProto}://${fwdHost}`;
+  const configured = getAppUrl();
+  if (!LOCAL_HOST.test(new URL(configured).host)) return configured;
+  const host = req.headers.get('host');
+  if (host && !LOCAL_HOST.test(host)) return `${fwdProto}://${host}`;
+  return new URL(req.url).origin;
+}
+
+function redirectTo(req: NextRequest, path: string): NextResponse {
+  return NextResponse.redirect(new URL(path, publicOrigin(req)), 303);
+}
+
 function fail(req: NextRequest): Response {
-  return NextResponse.redirect(new URL('/impersonate/expired', req.url), 303);
+  return redirectTo(req, '/impersonate/expired');
 }
 
 /** Admin support entry: exchanges a one-time code for a short-lived session. */
@@ -54,7 +77,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     [user.firstName, user.lastName].filter((x) => typeof x === 'string' && x).join(' ') ||
     (typeof user.email === 'string' ? user.email : 'user');
 
-  const res = NextResponse.redirect(new URL('/dashboard', req.url), 303);
+  const res = redirectTo(req, '/dashboard');
   setSessionCookies(res, { token: body.token, role, maxAge });
   res.cookies.set(
     COOKIE_IMPERSONATION,
