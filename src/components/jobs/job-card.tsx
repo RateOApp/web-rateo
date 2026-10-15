@@ -61,7 +61,9 @@ export function JobCard({ job, className }: { job: AnyJob; className?: string })
                 </Badge>
               ))}
               {imported ? (
-                <Badge className="bg-accent-50 text-accent-600">Imported</Badge>
+                <Badge className="bg-accent-50 text-accent-600">
+                  {job.pendingVerification ? "Claimed · verifying" : "Imported"}
+                </Badge>
               ) : null}
               {closed ? <Badge variant="destructive">Closed</Badge> : null}
             </div>

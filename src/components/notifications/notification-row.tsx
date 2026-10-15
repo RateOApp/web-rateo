@@ -23,6 +23,7 @@ import { notificationBody, type AppNotification } from "@/types/dashboard";
 const ICONS: Record<string, LucideIcon> = {
   kyc: ShieldCheck,
   job_interest: Briefcase,
+  job_claimed: Briefcase,
 };
 
 /** "Just now" / "12m" / "5h" / "3 Sep 2026" - matches the mobile row. */

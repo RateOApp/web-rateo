@@ -89,6 +89,15 @@ export function NotificationsList() {
       }
     }
 
+    // `job_claimed` points at the native Job created from a claimed listing.
+    if (type === "job_claimed") {
+      const relatedId = relatedIdOf(notification);
+      if (relatedId) {
+        router.push(`/dashboard/jobs/${relatedId}/applicants`);
+        return;
+      }
+    }
+
     router.push(routes[type] ?? fallback);
   }
 

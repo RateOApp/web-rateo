@@ -8,10 +8,12 @@ import { useKycGate, useParticipationLock } from "@/components/dashboard/dashboa
 import { CardListSkeleton } from "@/components/shared/card-list-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { useMyClaims } from "@/hooks/use-imported-jobs";
 import { useMyJobs } from "@/hooks/use-my-jobs";
-import { formatDate } from "@/lib/format";
+import { formatDate, humanizeEmploymentType } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Job } from "@/types/api";
+import type { PendingClaim } from "@/types/imported-jobs";
 
 /**
  * "Post a job", gated the way the endpoint is: unverified companies get the
@@ -118,8 +120,56 @@ function JobRow({ job }: { job: Job }) {
   );
 }
 
+function ClaimRow({ claim }: { claim: PendingClaim }) {
+  const count = claim.interestCount ?? 0;
+  const meta = [humanizeEmploymentType(claim.employmentType), claim.location?.trim()]
+    .filter(Boolean)
+    .join(" • ");
+
+  return (
+    <li className="rounded-2xl border border-border bg-white p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="min-w-0 text-base font-semibold text-brand-900 sm:text-lg">
+          {claim.title?.trim() || claim.jobTitle?.trim() || "Untitled role"}
+        </h3>
+        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+          Pending verification
+        </span>
+      </div>
+      {meta ? <p className="mt-1.5 text-sm text-muted-foreground">{meta}</p> : null}
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+          <Users aria-hidden="true" className="size-4" />
+          {count} interested
+        </span>
+        <Button asChild size="sm" className="bg-brand-700 text-white">
+          <Link href="/dashboard/kyc">Complete verification</Link>
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+function PendingClaims() {
+  const { data } = useMyClaims();
+  if (!data?.length) return null;
+
+  return (
+    <section aria-labelledby="pending-claims-heading" className="mb-6">
+      <h2 id="pending-claims-heading" className="mb-3 text-sm font-semibold text-brand-900">
+        Pending verification
+      </h2>
+      <ul className="flex flex-col gap-3">
+        {data.map((claim) => (
+          <ClaimRow key={claim._id} claim={claim} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** `GET /jobs/company/myjobs`, newest first (the server already sorts). */
-export function MyJobsList() {
+function NativeJobs() {
   const { data, isLoading, isError } = useMyJobs();
   const jobs = data ?? [];
 
@@ -152,5 +202,14 @@ export function MyJobsList() {
         <JobRow key={job._id} job={job} />
       ))}
     </ul>
+  );
+}
+
+export function MyJobsList() {
+  return (
+    <>
+      <PendingClaims />
+      <NativeJobs />
+    </>
   );
 }

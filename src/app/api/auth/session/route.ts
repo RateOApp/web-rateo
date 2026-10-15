@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getServerSession } from '@/lib/session';
+import { getImpersonation, getServerSession } from '@/lib/session';
 import type { SessionResponse } from '@/types/api';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,7 @@ export async function GET(): Promise<Response> {
   const body: SessionResponse = {
     authenticated: session !== null,
     role: session?.role ?? null,
+    impersonating: session !== null && (await getImpersonation()) !== null,
   };
   return NextResponse.json(body);
 }

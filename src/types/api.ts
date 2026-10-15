@@ -295,6 +295,8 @@ export type ImportedJob = {
   hasRegisteredInterest?: boolean;
   /** Set once the employer joined and the listing became a native `Job`. */
   nativeJobId?: string | null;
+  /** True while a claim awaits the company's KYC. Cosmetic only. */
+  pendingVerification?: boolean;
 };
 
 export type AnyJob = Job | ImportedJob;
@@ -386,7 +388,11 @@ export type LoginResponse = User & { token: string };
 
 export type ClientAuthResponse = Omit<LoginResponse, 'token'>;
 
-export type SessionResponse = { authenticated: boolean; role: Role | null };
+export type SessionResponse = {
+  authenticated: boolean;
+  role: Role | null;
+  impersonating: boolean;
+};
 
 /* -------------------------------------------------------------------------- */
 /* Notifications                                                              */

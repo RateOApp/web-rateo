@@ -72,6 +72,11 @@ function guard(req: NextRequest): NextResponse {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 
+  // Support-session pages are always public and never redirected.
+  if (pathname === '/impersonate' || pathname.startsWith('/impersonate/')) {
+    return NextResponse.next();
+  }
+
   if (isProtected && !hasToken) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';

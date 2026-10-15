@@ -1,5 +1,5 @@
 import { api } from '@/lib/api/client';
-import type { ClaimResponse } from '@/types/imported-jobs';
+import type { ClaimResponse, MyClaimsResponse, PendingClaim } from '@/types/imported-jobs';
 
 /**
  * Imported-jobs API, browser half. Mirrors `referrals.ts`: a plain function on
@@ -21,5 +21,12 @@ export const importedJobsService = {
     return api
       .post<ClaimResponse>(`/imported-jobs/claim/${encodeURIComponent(token)}`)
       .then((r) => r.data);
+  },
+
+  /** `GET imported-jobs/claims/mine`. Companies only. */
+  myClaims(): Promise<PendingClaim[]> {
+    return api
+      .get<MyClaimsResponse>('/imported-jobs/claims/mine')
+      .then((r) => r.data?.claims ?? []);
   },
 };

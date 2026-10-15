@@ -14,10 +14,18 @@ import { getApiErrorMessage } from "@/lib/api/client";
  * (role changed in another tab, session swapped) still surfaces cleanly via
  * the server's own message.
  */
-export function ClaimButton({ token }: { token: string }) {
+export function ClaimButton({ token, title }: { token: string; title?: string }) {
   const { mutate, isPending, isSuccess, isError, error, data } = useClaimListing();
 
-  if (isSuccess) {
+  if (isSuccess && data) {
+    const linkCls =
+      "inline-flex h-11 items-center justify-center rounded-xl bg-brand-700 px-6 text-sm font-semibold text-white transition-colors hover:bg-brand-900 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+    const secondaryCls =
+      "rounded text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+    const converted = data.status === "converted" && Boolean(data.jobId);
+    const count = data.interestCount ?? 0;
+    const name = title?.trim() || "this listing";
+
     return (
       <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl bg-success/10 p-5 text-center sm:p-6">
         <span
@@ -26,15 +34,35 @@ export function ClaimButton({ token }: { token: string }) {
         >
           <CheckCircle2 className="size-5" />
         </span>
-        <p className="text-sm font-medium text-brand-900">
-          {data?.message || "Listing claimed. Our team will review it shortly."}
-        </p>
-        <Link
-          href="/dashboard"
-          className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-brand-700 px-6 text-sm font-semibold text-white transition-colors hover:bg-brand-900 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          Go to your dashboard
-        </Link>
+        {converted ? (
+          <>
+            <h2 className="text-lg font-bold text-brand-900">You&rsquo;ve claimed {name}</h2>
+            <p className="text-sm text-brand-900">
+              {count === 0
+                ? "No candidates are interested yet. We'll let you know as soon as someone is."
+                : `${count} ${count === 1 ? "candidate is" : "candidates are"} already interested. Start reviewing their applications.`}
+            </p>
+            <Link href={`/dashboard/jobs/${data.jobId}/applicants`} className={`mt-1 ${linkCls}`}>
+              Review applications
+            </Link>
+            <Link href={`/jobs/${data.jobId}`} className={secondaryCls}>
+              View job
+            </Link>
+          </>
+        ) : (
+          <>
+            <h2 className="text-lg font-bold text-brand-900">Listing claimed</h2>
+            <p className="text-sm text-brand-900">
+              {data.message || "Complete verification to start reviewing candidates."}
+            </p>
+            <Link href="/dashboard/kyc" className={`mt-1 ${linkCls}`}>
+              Complete verification
+            </Link>
+            <Link href="/dashboard/jobs" className={secondaryCls}>
+              Go to my jobs
+            </Link>
+          </>
+        )}
       </div>
     );
   }

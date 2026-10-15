@@ -184,10 +184,10 @@ export default async function ClaimPage({ params }: { params: Promise<{ token: s
             isCompany ? (
               <>
                 <p className="mt-6 text-sm text-muted-foreground">
-                  Claiming links this listing to your company. Once the Rate&rsquo;O team approves
-                  it, you&rsquo;ll see everyone who registered interest.
+                  Claiming links this listing to your company so you can review everyone who
+                  registered interest.
                 </p>
-                <ClaimButton token={token} />
+                <ClaimButton token={token} title={info.jobTitle} />
               </>
             ) : (
               <div className="mt-6 rounded-2xl bg-cream-50 p-5 sm:p-6">

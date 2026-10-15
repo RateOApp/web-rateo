@@ -9,7 +9,7 @@ import type { User } from "@/types/api";
 /** Sticky dashboard header. Desktop nav mirrors the mobile bottom tabs. */
 export function AppHeader({ user }: { user: User }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background">
+    <header className="sticky top-[var(--imp-banner-h,0px)] z-40 border-b border-border bg-background">
       <div className="container-app flex h-16 items-center justify-between gap-4">
         <Link
           href="/dashboard"

@@ -32,4 +32,30 @@ export type ClaimInfo =
  * Refusals (wrong role, expired, unavailable, not found) come back as a
  * non-2xx `ApiError` whose body is this same `{ message }` shape.
  */
-export type ClaimResponse = ApiMessage;
+export type ClaimResponse = ApiMessage & {
+  status: 'converted' | 'claimed';
+  jobId: string | null;
+  interestCount: number;
+  kycRequired: boolean;
+};
+
+/** One row of `GET imported-jobs/claims/mine` (claimed, awaiting KYC). */
+export type PendingClaim = {
+  _id: string;
+  title?: string;
+  jobTitle?: string;
+  companyName?: string;
+  description?: string;
+  location?: string;
+  employmentType?: string;
+  category?: string;
+  salary?: string;
+  interestCount?: number;
+  status: 'claimed';
+  claimedAt?: string;
+  pendingVerification: true;
+  isImported: true;
+  createdAt?: string;
+};
+
+export type MyClaimsResponse = { claims: PendingClaim[] };

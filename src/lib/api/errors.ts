@@ -23,7 +23,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-/** Pulls `{ message, errors[] }` out of a backend error body. */
+/**
+ * Note: a 403 `{ code: 'IMPERSONATION_BLOCKED', message }` (action not allowed
+ * during an admin support session) needs no special casing - the server message
+ * is surfaced unchanged.
+ *
+ * Pulls `{ message, errors[] }` out of a backend error body. */
 export function messageFromBody(body: unknown): string | null {
   if (typeof body === 'string') return body.trim() || null;
   if (!isRecord(body)) return null;

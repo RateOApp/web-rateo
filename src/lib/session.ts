@@ -6,6 +6,9 @@ export const COOKIE_TOKEN = 'rateo_token';
 /** httpOnly cookie holding the account role, used for route/layout branching. */
 export const COOKIE_ROLE = 'rateo_role';
 
+/** httpOnly cookie marking an admin support (impersonation) session. JSON payload. */
+export const COOKIE_IMPERSONATION = 'rateo_imp';
+
 export type Role = 'individual' | 'company';
 
 export type Session = { token: string; role: Role | null };
@@ -42,9 +45,12 @@ export function sessionCookieOptions() {
 /** Sets the token cookie (and the role cookie when a role is supplied). */
 export function setSessionCookies(
   res: NextResponse,
-  s: { token: string; role?: Role | null },
+  s: { token: string; role?: Role | null; maxAge?: number },
 ): NextResponse {
-  const options = sessionCookieOptions();
+  const options = {
+    ...sessionCookieOptions(),
+    ...(s.maxAge !== undefined ? { maxAge: s.maxAge } : {}),
+  };
   res.cookies.set(COOKIE_TOKEN, s.token, options);
   if (s.role) res.cookies.set(COOKIE_ROLE, s.role, options);
   return res;
@@ -55,5 +61,30 @@ export function clearSessionCookies(res: NextResponse): NextResponse {
   const options = { ...sessionCookieOptions(), maxAge: 0 };
   res.cookies.set(COOKIE_TOKEN, '', options);
   res.cookies.set(COOKIE_ROLE, '', options);
+  res.cookies.set(COOKIE_IMPERSONATION, '', options);
   return res;
+}
+
+export type Impersonation = { adminName: string; userName: string; expiresAt: string };
+
+/** Reads the support-session marker cookie. `null` when absent or malformed. */
+export async function getImpersonation(): Promise<Impersonation | null> {
+  const store = await cookies();
+  const raw = store.get(COOKIE_IMPERSONATION)?.value;
+  if (!raw) return null;
+  try {
+    const v: unknown = JSON.parse(raw);
+    if (typeof v !== 'object' || v === null) return null;
+    const r = v as Record<string, unknown>;
+    if (
+      typeof r.adminName !== 'string' ||
+      typeof r.userName !== 'string' ||
+      typeof r.expiresAt !== 'string'
+    ) {
+      return null;
+    }
+    return { adminName: r.adminName, userName: r.userName, expiresAt: r.expiresAt };
+  } catch {
+    return null;
+  }
 }
