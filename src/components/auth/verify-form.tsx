@@ -27,7 +27,15 @@ function formatCountdown(seconds: number): string {
   return `${mm}:${ss}`;
 }
 
-export function VerifyForm({ email, mode }: { email: string; mode: VerifyMode }) {
+export function VerifyForm({
+  email,
+  mode,
+  next,
+}: {
+  email: string;
+  mode: VerifyMode;
+  next?: string;
+}) {
   const router = useRouter();
 
   const [code, setCode] = useState("");
@@ -57,7 +65,7 @@ export function VerifyForm({ email, mode }: { email: string; mode: VerifyMode })
     try {
       if (mode === "signup") {
         await authService.verifyEmail(code);
-        hardNavigate("/setup");
+        hardNavigate(next ? `/setup?next=${encodeURIComponent(next)}` : "/setup");
         return;
       }
       await authService.verifyResetCode(email, code);

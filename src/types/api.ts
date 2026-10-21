@@ -320,6 +320,17 @@ export type JobInterest = {
 /** `GET /imported-jobs/interests/mine`. */
 export type MyInterestsResponse = { interests: JobInterest[] };
 
+/** What `POST /jobs/intents` (or the `kyc_updated` socket event) applied for a verified user. */
+export type JobIntentSummary = {
+  saved: { jobId: string; title?: string }[];
+  interested: { jobId: string; title?: string }[];
+  unavailable: { jobId: string }[];
+};
+
+export type StoreIntentsResponse =
+  | { applied: JobIntentSummary | null }
+  | { stored: true; count: number };
+
 export function isImportedJob(job: AnyJob): job is ImportedJob {
   return job.isImported === true;
 }

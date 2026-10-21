@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { AccountSuspendedDialog } from "@/components/messages/account-suspended-dialog";
 import { useMe } from "@/hooks/use-me";
 import { NOTIFICATIONS_KEY } from "@/hooks/use-notifications";
+import { MY_INTERESTS_KEY } from "@/hooks/use-my-interests";
+import { SAVED_JOBS_KEY } from "@/hooks/use-saved-jobs";
 import { CONVERSATIONS_KEY, UNREAD_MESSAGES_KEY } from "@/hooks/use-messages";
 import { connectSocket, disconnectSocket, type AppSocket } from "@/lib/socket";
 import { authService } from "@/services/auth";
@@ -151,6 +153,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         onSuspended={() => setSuspended(true)}
         invalidate={(key) => void queryClient.invalidateQueries({ queryKey: key })}
         refresh={() => router.refresh()}
+        navigate={(href) => router.push(href)}
       />
       {children}
       <AccountSuspendedDialog open={suspended} busy={loggingOut} onLogout={handleLogout} />
@@ -168,12 +171,14 @@ function GlobalSocketListeners({
   onSuspended,
   invalidate,
   refresh,
+  navigate,
 }: {
   userId: string | null;
   pathnameRef: React.RefObject<string>;
   onSuspended: () => void;
   invalidate: (key: readonly unknown[]) => void;
   refresh: () => void;
+  navigate: (href: string) => void;
 }) {
   useSocketEvent("notification", () => {
     invalidate(NOTIFICATIONS_KEY);
@@ -201,10 +206,26 @@ function GlobalSocketListeners({
   useSocketEvent("kyc_updated", (payload) => {
     invalidate(["me"]);
     refresh();
-    const approved = payload.kyc?.status === "approved";
+    // The socket payload carries the raw kycStatus ('verified'); REST responses
+    // normalize it to 'approved'. Accept both.
+    const approved = payload.kyc?.status === "approved" || payload.kyc?.status === "verified";
     const description = payload.message?.trim();
     if (approved) {
-      toast.success("Verified 🎉", { description });
+      invalidate(SAVED_JOBS_KEY);
+      invalidate(MY_INTERESTS_KEY);
+      const intents = payload.jobIntents;
+      const handled = [...(intents?.saved ?? []), ...(intents?.interested ?? [])];
+      if (handled.length === 0) {
+        toast.success("Verified 🎉", { description });
+      } else {
+        const title = handled[0].title;
+        toast.success(
+          handled.length === 1 && title
+            ? `Verified 🎉 — "${title}" was saved to your jobs`
+            : `Verified 🎉 — ${handled.length} jobs saved to your list`,
+          { action: { label: "View", onClick: () => navigate("/dashboard/saved") } },
+        );
+      }
     } else {
       toast.message("Verification update", { description });
     }

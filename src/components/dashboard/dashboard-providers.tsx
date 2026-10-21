@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { JobIntentSync } from "@/components/dashboard/job-intent-sync";
 import { KycRequiredDialog } from "@/components/dashboard/kyc-required-dialog";
 import { SocketProvider } from "@/components/dashboard/socket-provider";
 import { ParticipationLockDialog } from "@/components/dashboard/participation-lock-dialog";
@@ -177,6 +178,7 @@ export function DashboardProviders({ children }: { children: React.ReactNode }) 
   return (
     <KycGateProvider>
       <SocketProvider>
+        <JobIntentSync />
         <ParticipationLockProvider>{children}</ParticipationLockProvider>
       </SocketProvider>
     </KycGateProvider>
