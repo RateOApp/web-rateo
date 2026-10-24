@@ -17,6 +17,7 @@ import { UserAvatar } from '@/components/shared/user-avatar';
 import { companyFeedback } from '@/lib/company-feedback';
 import { toDate } from '@/lib/format';
 import { formatRating } from '@/lib/rating';
+import { hiddenCountSubtitle } from '@/lib/reviews';
 import { COMPANY_CRITERIA } from '@/lib/rating-criteria';
 import { groupReviewsByMonth } from '@/lib/reviews-by-month';
 import type { ParticipationStatus, User } from '@/types/api';
@@ -33,7 +34,7 @@ type CompanyRatingTabProps = {
 /**
  * How the company's own staff rate it.
  *
- * Reviews from people who still work here stay sealed until the contract ends -
+ * Reviews from people who still work here stay sealed until employment ends -
  * that is the whole reason employees are willing to write them, so the card
  * says so explicitly rather than quietly omitting the row.
  */
@@ -98,7 +99,7 @@ export function CompanyRatingTab({
             <MonthAccordion
               key={g.key}
               label={g.label}
-              subtitle={g.hiddenCount ? `${g.hiddenCount} hidden until contract ends` : undefined}
+              subtitle={g.hiddenCount ? hiddenCountSubtitle(g.hiddenCount) : undefined}
               count={g.reviews.length}
               expanded={isOpen(g.key, idx)}
               onToggle={() =>

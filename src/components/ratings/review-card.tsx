@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock } from "lucide-react";
+import { Lock, ShieldCheck } from "lucide-react";
 import { StarRating } from "@/components/shared/star-rating";
 import {
   HIDDEN_CURRENT_EMPLOYEE,
@@ -9,6 +9,7 @@ import {
   splitComment,
 } from "@/components/ratings/review-detail-dialog";
 import { formatDate } from "@/lib/format";
+import { reviewerDisplay } from "@/lib/reviews";
 import type { ReviewItem } from "@/types/reviews";
 
 const EXCERPT_LENGTH = 150;
@@ -24,7 +25,7 @@ const EXCERPT_LENGTH = 150;
  * - `about-company` — the employer's public reviews, seen by an employee.
  * - `about-my-company` — the company reading its OWN reviews. A sealed one
  *   shows nothing at all: not the reviewer, not the stars. Staff write these
- *   precisely because they stay anonymous until the contract ends, and a name
+ *   precisely because they stay anonymous until employment ends, and a name
  *   next to a lock icon would break that promise while looking like it kept it.
  */
 type ReviewVariant = "about-me" | "about-company" | "about-my-company";
@@ -37,7 +38,7 @@ const VARIANTS: Record<
     /** Name for a reviewer the payload did not populate. */
     fallbackName: string;
     /** Copy for a review by someone still employed. */
-    hiddenEmployeeCopy: string;
+    hiddenEmployeeCopy: (review: ReviewItem) => string;
     /** Whether a sealed review may still show its score. */
     starsWhenHidden: boolean;
     /** Heading for a sealed review; `null` keeps the normal one. */
@@ -68,9 +69,8 @@ const VARIANTS: Record<
 };
 
 function reviewerName(review: ReviewItem, fallback: string): string {
-  const reviewer = review.reviewer;
-  const person = [reviewer?.firstName, reviewer?.lastName].filter(Boolean).join(" ").trim();
-  return reviewer?.companyName?.trim() || person || fallback;
+  if (!review.reviewer) return fallback;
+  return reviewerDisplay(review).name;
 }
 
 type ReviewCardProps = {
@@ -87,7 +87,7 @@ export function ReviewCard({ review, variant, onOpen }: ReviewCardProps) {
   const hiddenCopy = review.commentHidden
     ? HIDDEN_PARTICIPATION
     : review.isCurrentEmployee
-      ? config.hiddenEmployeeCopy
+      ? config.hiddenEmployeeCopy(review)
       : null;
 
   const heading =
@@ -97,13 +97,23 @@ export function ReviewCard({ review, variant, onOpen }: ReviewCardProps) {
         ? reviewerName(review, config.fallbackName)
         : title || "Review";
 
+  const showAnonymousIcon =
+    config.heading === "reviewer" &&
+    !(hiddenCopy && config.hiddenHeading) &&
+    reviewerDisplay(review).anonymous;
+
   const comment = review.comment ?? "";
   const truncated = comment.length > EXCERPT_LENGTH;
 
   return (
     <article className="rounded-2xl border border-border bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="min-w-0 text-sm font-semibold text-brand-900">{heading}</h3>
+        <h3 className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-brand-900">
+          {showAnonymousIcon ? (
+            <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-brand-700" />
+          ) : null}
+          {heading}
+        </h3>
         {date ? <span className="text-xs text-muted-foreground">{date}</span> : null}
       </div>
 

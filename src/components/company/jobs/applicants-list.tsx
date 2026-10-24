@@ -268,6 +268,7 @@ export function ApplicantsList({ jobId }: { jobId: string }) {
               jobId={jobId}
               applicant={row.applicant}
               status={row.status ?? "pending"}
+              employmentEnded={Boolean(row.employmentEnded)}
               busy={busyId === row.applicant._id}
               onAccept={() => handleAcceptRequest(row.applicant._id)}
               onDecline={() =>

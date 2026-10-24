@@ -29,6 +29,7 @@ export function ApplicantRow({
   jobId,
   applicant,
   status,
+  employmentEnded = false,
   busy = false,
   onAccept,
   onDecline,
@@ -36,6 +37,7 @@ export function ApplicantRow({
   jobId: string;
   applicant: JobApplicantProfile;
   status: ApplicantStatus;
+  employmentEnded?: boolean;
   busy?: boolean;
   onAccept: () => void;
   onDecline: () => void;
@@ -105,10 +107,10 @@ export function ApplicantRow({
         <span
           className={cn(
             "relative z-10 shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize",
-            statusPill(status),
+            employmentEnded ? "bg-muted text-muted-foreground" : statusPill(status),
           )}
         >
-          {status}
+          {employmentEnded ? "Contract ended" : status}
         </span>
       )}
     </li>

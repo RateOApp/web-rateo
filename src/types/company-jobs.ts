@@ -61,6 +61,8 @@ export type JobApplicantRow = {
   _id?: string;
   applicant: JobApplicantProfile | null;
   status?: ApplicantStatus;
+  /** Server-derived: application was accepted but the employment has since ended. */
+  employmentEnded?: boolean;
   appliedAt?: string;
 };
 

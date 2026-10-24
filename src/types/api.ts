@@ -354,7 +354,18 @@ export type Review = {
   details?: Record<string, number>;
   createdAt?: string;
   isCurrentEmployee?: boolean;
-  reviewer?: Pick<User, '_id' | 'firstName' | 'lastName' | 'avatar' | 'companyName' | 'role'>;
+  /** ISO date the sealed review is revealed; null while still employed. */
+  revealAt?: string | null;
+  /** Same as `isCurrentEmployee` (review is sealed). */
+  sealed?: boolean;
+  reviewer?: Partial<
+    Pick<User, '_id' | 'firstName' | 'lastName' | 'avatar' | 'companyName' | 'role'>
+  > & {
+    /** Server-provided label; "Verified former employee" for individuals. */
+    displayName?: string;
+    /** True when the reviewer's identity is withheld. */
+    anonymous?: boolean;
+  };
 };
 
 /** `GET /reviews/:userId` - an array on some deployments, an object on others. */

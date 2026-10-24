@@ -1,6 +1,7 @@
 import { EyeOff } from "lucide-react";
 import { StarRating } from "@/components/shared/star-rating";
 import { formatDate, toDate } from "@/lib/format";
+import { hiddenReviewCopy } from "@/lib/reviews";
 import type { Review } from "@/types/api";
 
 /**
@@ -28,7 +29,7 @@ function ReviewItem({ review }: { review: Review }) {
       {review.isCurrentEmployee ? (
         <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground italic">
           <EyeOff aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          Review hidden until this employment ends.
+          {hiddenReviewCopy(review)}
         </p>
       ) : (
         <>

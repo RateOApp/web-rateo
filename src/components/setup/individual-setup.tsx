@@ -39,6 +39,7 @@ import { JOB_TITLES } from '@/lib/constants/job-titles';
 import { DEFAULT_WORK_LOCATION, WORK_LOCATIONS } from '@/lib/constants/locations';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { hardNavigate } from '@/lib/navigate';
+import { REVIEW_HIDDEN_EXPLAINER } from '@/lib/reviews';
 import { invitationsService } from '@/services/invitations';
 import { usersService } from '@/services/users';
 import type { User } from '@/types/api';
@@ -557,8 +558,7 @@ export function IndividualSetup({
               other, and your work history updates on your profile.
             </p>
             <p>
-              While you are still employed you can see your overall rating, but written comments
-              stay hidden until the working relationship ends &mdash; on both sides.
+              {REVIEW_HIDDEN_EXPLAINER}
             </p>
           </div>
 

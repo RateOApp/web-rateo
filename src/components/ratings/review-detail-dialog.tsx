@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/format";
+import { hiddenReviewCopy, stillEmployedCopy } from "@/lib/reviews";
 import type { ReviewItem } from "@/types/reviews";
 
 /**
@@ -29,16 +30,14 @@ export function splitComment(comment: string | null | undefined): {
 /** Copy shown instead of a comment, in the order mobile checks the flags. */
 export const HIDDEN_PARTICIPATION =
   "Feedback hidden — this user hasn't completed their monthly rating.";
-export const HIDDEN_CURRENT_EMPLOYEE =
-  "Review hidden — revealed when the contract ends.";
-export const HIDDEN_STILL_EMPLOYED =
-  "Still an employee — rating cannot be seen until after termination of contract.";
+export const HIDDEN_CURRENT_EMPLOYEE = hiddenReviewCopy;
+export const HIDDEN_STILL_EMPLOYED = stillEmployedCopy;
 
 type ReviewDetailDialogProps = {
   review: ReviewItem | null;
   onOpenChange: (open: boolean) => void;
   /** Company tab hides a still-employed reviewer's comment with other copy. */
-  hiddenEmployeeCopy?: string;
+  hiddenEmployeeCopy?: (review: ReviewItem) => string;
 };
 
 export function ReviewDetailDialog({
@@ -51,7 +50,7 @@ export function ReviewDetailDialog({
   const hiddenCopy = review?.commentHidden
     ? HIDDEN_PARTICIPATION
     : review?.isCurrentEmployee
-      ? hiddenEmployeeCopy
+      ? hiddenEmployeeCopy(review)
       : null;
 
   return (

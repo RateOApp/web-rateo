@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useQueryClient } from "@tanstack/react-query";
-import { ImageUp, Loader2, MessageSquareWarning, Send, X } from "lucide-react";
+import { Copy, ImageUp, Loader2, MessageSquareWarning, Send, X } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
+import { DateDivider, dayKey, dayLabel } from "@/components/messages/date-divider";
 import { useSocketEvent } from "@/components/dashboard/socket-provider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -24,21 +26,14 @@ const ACCEPTED = ["image/png", "image/jpeg"];
 function timestamp(value: string | undefined): string {
   if (!value) return "";
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toLocaleString(undefined, {
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  return Number.isNaN(date.getTime()) ? "" : format(date, "HH:mm");
 }
 
 function Bubble({ message }: { message: SupportMessage }) {
   const mine = message.senderRole !== "admin";
 
   return (
-    <li className={cn("flex", mine ? "justify-end" : "justify-start")}>
+    <li className={cn("group flex", mine ? "justify-end" : "justify-start")}>
       <div
         className={cn(
           "max-w-[85%] rounded-2xl px-4 py-3 sm:max-w-[70%]",
@@ -68,14 +63,33 @@ function Bubble({ message }: { message: SupportMessage }) {
             />
           </a>
         ))}
-        <p
+        <div
           className={cn(
-            "mt-1.5 text-[0.7rem]",
+            "mt-1.5 flex items-center justify-end gap-2 text-[0.7rem]",
             mine ? "text-white/70" : "text-muted-foreground",
           )}
         >
-          {timestamp(message.createdAt)}
-        </p>
+          {message.text ? (
+            <button
+              type="button"
+              aria-label="Copy message"
+              onClick={() => {
+                void navigator.clipboard?.writeText(message.text ?? "");
+                toast.success("Copied");
+              }}
+              className={cn(
+                // Always visible (touch devices have no hover); brightens on hover/focus.
+                "rounded opacity-70 transition-opacity group-hover:opacity-100 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                mine
+                  ? "text-white/70 hover:text-white"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Copy className="size-3.5" />
+            </button>
+          ) : null}
+          <span>{timestamp(message.createdAt)}</span>
+        </div>
       </div>
     </li>
   );
@@ -220,9 +234,17 @@ export function TicketThread({ ticketId }: { ticketId: string }) {
       </section>
 
       <ul aria-live="polite" aria-label="Conversation" className="flex flex-col gap-3">
-        {messages.map((message, index) => (
-          <Bubble key={message._id ?? `${message.createdAt}-${index}`} message={message} />
-        ))}
+        {messages.map((message, index) => {
+          const key = dayKey(message.createdAt);
+          const showDivider = index === 0 || key !== dayKey(messages[index - 1].createdAt);
+          const label = showDivider ? dayLabel(message.createdAt) : null;
+          return (
+            <Fragment key={message._id ?? `${message.createdAt}-${index}`}>
+              {label ? <DateDivider label={label} /> : null}
+              <Bubble message={message} />
+            </Fragment>
+          );
+        })}
       </ul>
       <div ref={bottom} />
 

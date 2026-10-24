@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { StarRating } from "@/components/shared/star-rating";
 import { formatDate } from "@/lib/format";
+import { hiddenReviewCopy } from "@/lib/reviews";
 import type { ReviewItem } from "@/types/reviews";
 import type { TalentExperience } from "@/types/candidates";
 
@@ -149,7 +150,7 @@ export function TalentWorkHistory({
                   {latest.commentHidden ? (
                     <HiddenNote text="Feedback hidden — this user hasn't completed their monthly rating." />
                   ) : latest.isCurrentEmployee ? (
-                    <HiddenNote text="Review hidden — revealed when the contract ends." />
+                    <HiddenNote text={hiddenReviewCopy(latest)} />
                   ) : parsed.body ? (
                     <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
                       {parsed.body}
@@ -201,7 +202,7 @@ export function TalentWorkHistory({
                   {review.commentHidden ? (
                     <HiddenNote text="Feedback hidden — this user hasn't completed their monthly rating." />
                   ) : review.isCurrentEmployee ? (
-                    <HiddenNote text="Review hidden — revealed when the contract ends." />
+                    <HiddenNote text={hiddenReviewCopy(review)} />
                   ) : parsed.body ? (
                     <p className="mt-2 text-sm text-muted-foreground">{parsed.body}</p>
                   ) : null}

@@ -84,6 +84,13 @@ export function TalentDetail({
     experience.some(
       (entry) => entry.current && String(entry.companyId ?? "") === String(me?._id ?? "\0"),
     );
+  // Worked for this company before but no live contract now (terminated,
+  // resigned, or moved on). Drives the "Former employee" summary label.
+  const isFormerEmployee =
+    !isEmployee &&
+    experience.some(
+      (entry) => !entry.current && String(entry.companyId ?? "") === String(me?._id ?? "\0"),
+    );
 
   // Has THIS company already rated the candidate in the current month? Derived
   // from the candidate's own reviews so it holds however the profile was opened.
@@ -186,7 +193,7 @@ export function TalentDetail({
             <p className="text-xs text-muted-foreground">ID-{candidate.publicId}</p>
           ) : null}
           <p className="mt-0.5 truncate text-sm text-muted-foreground">
-            {candidate ? candidateTitleLabel(candidate) : ""}
+            {candidate ? (isFormerEmployee ? "Former employee" : candidateTitleLabel(candidate)) : ""}
           </p>
           <StarRating
             value={rating ?? 0}
