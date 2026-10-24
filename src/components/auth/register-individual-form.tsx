@@ -20,6 +20,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import { describedBy, FieldShell, TextField } from "@/components/auth/text-field";
 import { authErrorMessage } from "@/lib/auth-error";
 import { suggestEmailFix } from "@/lib/email-typo";
+import { clearPendingJobs, readPendingJobs, toIntentPayload } from "@/lib/job-intent";
 import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from "@/lib/referral-code";
 import { PASSWORDS_DO_NOT_MATCH, passwordSchema } from "@/lib/password";
 import { authService } from "@/services/auth";
@@ -56,8 +57,11 @@ type RegisterValues = z.infer<typeof schema>;
 /** `initialReferralCode` comes from `?ref=` on the page, already normalised. */
 export function RegisterIndividualForm({
   initialReferralCode = "",
+  next,
 }: {
   initialReferralCode?: string;
+  /** Already passed through `safeNextPath` by the page. */
+  next?: string;
 } = {}) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -92,6 +96,7 @@ export function RegisterIndividualForm({
     setServerError(null);
     const email = values.email.trim();
     const code = normaliseReferralCode(values.referralCode);
+    const pendingJobs = toIntentPayload(readPendingJobs());
     try {
       await authService.register({
         role: "individual",
@@ -104,8 +109,12 @@ export function RegisterIndividualForm({
         // An unknown code never fails the signup - the backend skips it and
         // answers `referralApplied: false`.
         ...(code ? { referralCode: code, referralSource: REFERRAL_SOURCE_WEB } : {}),
+        ...(pendingJobs.length ? { pendingJobs } : {}),
       });
-      router.push(`/verify?email=${encodeURIComponent(email)}&mode=signup`);
+      clearPendingJobs();
+      router.push(
+        `/verify?email=${encodeURIComponent(email)}&mode=signup${next ? `&next=${encodeURIComponent(next)}` : ""}`,
+      );
     } catch (err) {
       setServerError(authErrorMessage(err, "Could not create your account. Please try again."));
     }

@@ -11,7 +11,7 @@
  *   `message` as well once the backend change lands; both are handled.
  */
 
-import type { PublicKycStatus, Role } from '@/types/api';
+import type { JobIntentSummary, KycStatus, PublicKycStatus, Role } from '@/types/api';
 import type { AppNotification } from '@/types/dashboard';
 import type { Message } from '@/types/messages';
 import type { SupportMessage, SupportTicketStatus } from '@/types/support';
@@ -48,8 +48,11 @@ export type AccountStatusChangedPayload = {
 export type KycUpdatedPayload = {
   userId: string;
   role?: Role;
-  kyc?: { status?: PublicKycStatus };
+  // finalizeKyc emits the RAW `user.kycStatus` ('verified'), not the REST
+  // layer's normalized 'approved' — accept both so the handler can too.
+  kyc?: { status?: PublicKycStatus | KycStatus };
   message?: string;
+  jobIntents?: JobIntentSummary;
   at?: string;
 };
 

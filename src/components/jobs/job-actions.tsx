@@ -21,6 +21,7 @@ import { SAVED_JOBS_KEY, useSavedJobs } from "@/hooks/use-saved-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { isDeadlinePast } from "@/lib/format";
 import { jobPath } from "@/lib/job-path";
+import { addPendingJob } from "@/lib/job-intent";
 import type { Role } from "@/lib/session";
 import { jobsService } from "@/services/jobs";
 import { isImportedJob, type AnyJob } from "@/types/api";
@@ -130,6 +131,10 @@ export function JobActions({
       if (status === 403 && /kyc|verif/i.test(message)) {
         // The backend gates apply/save behind approved KYC.
         kyc.open();
+        // Keep the intent server-side so it is applied once KYC is approved.
+        void jobsService
+          .storeIntents([{ jobId: job._id, jobType: isImportedJob(job) ? "imported" : "job" }])
+          .catch(() => {});
       } else if (status === 400 && /already/i.test(message)) {
         // "You have already applied for this job" / "already saved".
         if (kind === "apply") setAppliedLocal(true);
@@ -148,13 +153,25 @@ export function JobActions({
   /* ---- signed out ------------------------------------------------------ */
 
   if (!viewer.authenticated) {
+    // Remembered before navigating so registration/KYC can finish the job later.
+    const rememberJob = () =>
+      addPendingJob({
+        jobId: job._id,
+        jobType: isImportedJob(job) ? "imported" : "job",
+        href: jobHref,
+        title: job.title,
+      });
     return (
       <div className="flex flex-col gap-2">
         <Button asChild size="lg" className="h-11 w-full bg-brand-700 text-white">
-          <Link href={`/login?next=${encodeURIComponent(jobHref)}`}>Log in to apply</Link>
+          <Link href={`/login?next=${encodeURIComponent(jobHref)}`} onClick={rememberJob}>
+            Log in to apply
+          </Link>
         </Button>
         <Button asChild variant="outline" size="lg" className="h-11 w-full">
-          <Link href="/register">Create account</Link>
+          <Link href={`/register?next=${encodeURIComponent(jobHref)}`} onClick={rememberJob}>
+            Create account
+          </Link>
         </Button>
         {shareRow}
       </div>

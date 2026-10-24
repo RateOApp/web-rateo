@@ -38,6 +38,7 @@ import { UNEMPLOYED_LABEL } from '@/lib/constants/company';
 import { JOB_TITLES } from '@/lib/constants/job-titles';
 import { DEFAULT_WORK_LOCATION, WORK_LOCATIONS } from '@/lib/constants/locations';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import { safeNextPath } from '@/lib/clerk';
 import { hardNavigate } from '@/lib/navigate';
 import { REVIEW_HIDDEN_EXPLAINER } from '@/lib/reviews';
 import { invitationsService } from '@/services/invitations';
@@ -63,10 +64,13 @@ function computeNeedsName(user: User): boolean {
 
 export function IndividualSetup({
   user,
+  next,
   /** Escape hatch for visual QA only; production always starts at step 1. */
   initialStep = 1,
 }: {
   user: User;
+  /** Where to land after setup (e.g. the job the visitor came from). */
+  next?: string;
   initialStep?: number;
 }) {
   const needsName = useMemo(() => computeNeedsName(user), [user]);
@@ -219,7 +223,7 @@ export function IndividualSetup({
 
       // A full navigation, not a router push: the dashboard's server layout has
       // to re-read the profile before its `setupCompleted === false` guard runs.
-      hardNavigate('/dashboard');
+      hardNavigate(safeNextPath(next) ?? '/dashboard');
     } catch (error) {
       setSubmitting(false);
       toast.error(getApiErrorMessage(error, 'Could not finish setup. Please try again.'));

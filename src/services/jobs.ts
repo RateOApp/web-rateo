@@ -10,6 +10,7 @@ import type {
   JobInterest,
   JobsResponse,
   MyInterestsResponse,
+  StoreIntentsResponse,
 } from '@/types/api';
 import type {
   ApplicantStatus,
@@ -80,6 +81,23 @@ export const jobsService = {
   /** Saved jobs are always native jobs - imported listings cannot be saved. */
   saved(): Promise<Job[]> {
     return api.get<SavedJobsResponse>('/jobs/user/saved').then((r) => r.data?.savedJobs ?? []);
+  },
+
+  /** Remember jobs picked while signed out; applied straight away when KYC is verified. */
+  storeIntents(jobs: { jobId: string; jobType: 'job' | 'imported' }[]): Promise<StoreIntentsResponse> {
+    return api.post<StoreIntentsResponse>('/jobs/intents', { jobs }).then((r) => r.data);
+  },
+
+  myIntents(): Promise<{ jobId: string; jobType: 'job' | 'imported'; setAt: string }[]> {
+    return api
+      .get<{ intents: { jobId: string; jobType: 'job' | 'imported'; setAt: string }[] }>(
+        '/jobs/intents',
+      )
+      .then((r) => r.data?.intents ?? []);
+  },
+
+  removeIntent(jobId: string): Promise<{ removed: true }> {
+    return api.delete<{ removed: true }>(`/jobs/intents/${jobId}`).then((r) => r.data);
   },
 
   applied(): Promise<JobApplication[]> {

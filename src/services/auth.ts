@@ -24,6 +24,11 @@ export type ReferralFields = {
   scalooRef?: string;
 };
 
+/** Jobs a signed-out visitor picked before registering; the backend applies them after KYC. */
+export type PendingJobFields = {
+  pendingJobs?: { jobId: string; jobType: 'job' | 'imported' }[];
+};
+
 /** A register / social-login response, plus whether a referral was recorded. */
 export type AuthResponseWithReferral = ClientAuthResponse & { referralApplied?: boolean };
 
@@ -32,7 +37,7 @@ export type AuthResponseWithReferral = ClientAuthResponse & { referralApplied?: 
  * either `phone` or `phoneNumber` and stores it as `phone`. Send `''` when the
  * optional number is left blank.
  */
-export type RegisterIndividualPayload = ReferralFields & {
+export type RegisterIndividualPayload = ReferralFields & PendingJobFields & {
   role: 'individual';
   firstName: string;
   lastName: string;
