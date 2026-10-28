@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, Eye, FileText, Heart, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileText, Heart, Loader2, MapPin } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useKycGate } from "@/components/dashboard/dashboard-providers";
@@ -12,6 +12,7 @@ import { TalentMenu } from "@/components/company/talent/talent-menu";
 import { TalentWorkHistory } from "@/components/company/talent/talent-work-history";
 import { MetricsBars, metricsFromBreakdown } from "@/components/ratings/metrics-bars";
 import { PageContainer } from "@/components/layout/page-container";
+import { displayLocation } from "@/components/shared/location-picker";
 import { StarRating } from "@/components/shared/star-rating";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
@@ -195,6 +196,12 @@ export function TalentDetail({
           <p className="mt-0.5 truncate text-sm text-muted-foreground">
             {candidate ? (isFormerEmployee ? "Former employee" : candidateTitleLabel(candidate)) : ""}
           </p>
+          {displayLocation(candidate?.location) ? (
+            <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
+              <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+              <span className="truncate">{displayLocation(candidate?.location)}</span>
+            </p>
+          ) : null}
           <StarRating
             value={rating ?? 0}
             size={16}

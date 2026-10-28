@@ -12,6 +12,12 @@ import { AvatarPicker } from '@/components/profile/avatar-picker';
 import { EmailChangeDialog } from '@/components/profile/email-change-dialog';
 import { IdRequestDialog, type IdRequestKind } from '@/components/profile/id-request-dialog';
 import { SuggestInput } from '@/components/setup/suggest-input';
+import {
+  LocationPicker,
+  initialLocation,
+  validateLocation,
+  type LocationErrors,
+} from '@/components/shared/location-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,7 +31,7 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 import { COMPANY_SIZES } from '@/lib/constants/company';
 import { INDUSTRIES, isIndustry } from '@/lib/constants/industries';
 import { usersService } from '@/services/users';
-import type { User } from '@/types/api';
+import type { LocationDetails, User } from '@/types/api';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -66,7 +72,9 @@ export function EditCompanyProfileForm({ user }: { user: User }) {
   const [industry, setIndustry] = useState(user.industry ?? '');
   const [industryTouched, setIndustryTouched] = useState(false);
   const [companySize, setCompanySize] = useState(user.companySize ?? '');
-  const [address, setAddress] = useState(user.location ?? '');
+  const [address, setAddress] = useState<LocationDetails>(() => initialLocation(user, 'company'));
+  const [addressErrors, setAddressErrors] = useState<LocationErrors>({});
+  const [initialAddress] = useState<LocationDetails>(() => initialLocation(user, 'company'));
   const [avatar, setAvatar] = useState<string | null>(user.avatar ?? null);
 
   const [saving, setSaving] = useState(false);
@@ -114,6 +122,23 @@ export function EditCompanyProfileForm({ user }: { user: User }) {
       return;
     }
 
+    // A legacy company has only a free-text address and no state. Leave it
+    // untouched unless they edit it, in which case the structured fields are
+    // needed (street + state + LGA).
+    const locationTouched =
+      address.country !== initialAddress.country ||
+      address.state !== initialAddress.state ||
+      address.city !== initialAddress.city ||
+      (address.street ?? '') !== (initialAddress.street ?? '');
+    if (locationTouched) {
+      const found = validateLocation(address, { requireStreet: true, requireCity: true });
+      if (Object.keys(found).length > 0) {
+        setAddressErrors(found);
+        return;
+      }
+    }
+    setAddressErrors({});
+
     setError(null);
     setSaving(true);
     try {
@@ -121,8 +146,16 @@ export function EditCompanyProfileForm({ user }: { user: User }) {
         companyName: companyName.trim(),
         industry,
         companySize,
-        // The controller aliases `address` onto `user.location` for companies.
-        address: address.trim(),
+        ...(locationTouched
+          ? {
+              locationDetails: {
+                country: address.country.trim() || 'NG',
+                state: address.state.trim(),
+                city: address.city.trim(),
+                street: (address.street ?? '').trim(),
+              },
+            }
+          : {}),
         ...(avatar ? { avatar } : {}),
       });
       await refreshUser();
@@ -253,17 +286,19 @@ export function EditCompanyProfileForm({ user }: { user: User }) {
           </Select>
         </FieldShell>
 
-        <FieldShell id="company-address" label="Address">
-          <Input
-            id="company-address"
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-brand-900">Location</p>
+          <LocationPicker
+            showStreet
+            streetLabel="Address"
             value={address}
-            autoComplete="street-address"
-            placeholder="Company address"
-            disabled={saving}
-            onChange={(event) => setAddress(event.target.value)}
-            className="h-11"
+            errors={addressErrors}
+            onChange={(next) => {
+              setAddress(next);
+              setAddressErrors({});
+            }}
           />
-        </FieldShell>
+        </div>
 
         {/* ---- contact email: OTP wizard or admin request ------------------ */}
         <div className="flex flex-col gap-1.5">

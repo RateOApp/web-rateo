@@ -8,6 +8,7 @@ import {
   FileText,
   Flag,
   Hourglass,
+  MapPin,
   Pencil,
   ShieldAlert,
   ShieldCheck,
@@ -19,6 +20,7 @@ import {
 
 import { ParticipationStatCard } from '@/components/dashboard/participation-stat-card';
 import { ProfileCompletionCard } from '@/components/profile/profile-completion-card';
+import { displayLocation } from '@/components/shared/location-picker';
 import { UserAvatar } from '@/components/shared/user-avatar';
 import { Badge } from '@/components/ui/badge';
 import { useMe } from '@/hooks/use-me';
@@ -100,6 +102,19 @@ export function IndividualProfile({ user: initialUser }: { user: User }) {
           <p className="mt-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
             <Briefcase aria-hidden="true" className="size-4" />
             {jobTitle}
+          </p>
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
+            <MapPin aria-hidden="true" className="size-4" />
+            {displayLocation(user.location) ? (
+              displayLocation(user.location)
+            ) : (
+              <Link
+                href="/dashboard/profile/edit"
+                className="text-brand-700 underline-offset-2 hover:underline"
+              >
+                Add your location
+              </Link>
+            )}
           </p>
           <p className="mt-1 flex items-center justify-center gap-1 text-sm font-semibold text-brand-900 sm:justify-start">
             {formatRating(averageRating)}

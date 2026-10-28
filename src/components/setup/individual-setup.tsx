@@ -23,6 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  EMPTY_LOCATION,
+  LocationPicker,
+  type LocationErrors,
+} from '@/components/shared/location-picker';
 import { UserAvatar } from '@/components/shared/user-avatar';
 import { SuggestInput } from '@/components/setup/suggest-input';
 import { WizardShell } from '@/components/setup/wizard-shell';
@@ -31,7 +36,9 @@ import {
   firstIssue,
   inviteEmailSchema,
   jobTitleSchema,
+  locationDetailsSchema,
   nameSchema,
+  workLocationSchema,
 } from '@/components/setup/schemas';
 import { useCompanySearch } from '@/hooks/use-company-search';
 import { UNEMPLOYED_LABEL } from '@/lib/constants/company';
@@ -43,9 +50,9 @@ import { hardNavigate } from '@/lib/navigate';
 import { REVIEW_HIDDEN_EXPLAINER } from '@/lib/reviews';
 import { invitationsService } from '@/services/invitations';
 import { usersService } from '@/services/users';
-import type { User } from '@/types/api';
+import type { LocationDetails, User } from '@/types/api';
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 type Errors = Partial<Record<'firstName' | 'lastName' | 'jobTitle' | 'company', string>>;
 
@@ -81,7 +88,9 @@ export function IndividualSetup({
   const [firstName, setFirstName] = useState(needsName ? '' : (user.firstName ?? ''));
   const [lastName, setLastName] = useState(needsName ? '' : (user.lastName ?? ''));
   const [jobTitle, setJobTitle] = useState('');
-  const [location, setLocation] = useState<string>(DEFAULT_WORK_LOCATION);
+  const [workLocation, setWorkLocation] = useState<string>(DEFAULT_WORK_LOCATION);
+  const [basedAt, setBasedAt] = useState<LocationDetails>(EMPTY_LOCATION);
+  const [basedErrors, setBasedErrors] = useState<LocationErrors>({});
 
   const [companyName, setCompanyName] = useState('');
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -154,7 +163,29 @@ export function IndividualSetup({
     }
 
     if (step === 2) {
+      const parsed = workLocationSchema.safeParse(workLocation);
+      if (!parsed.success) {
+        toast.error(firstIssue(parsed) ?? 'Please choose where you would like to work.');
+        return;
+      }
       setStep(3);
+      return;
+    }
+
+    if (step === 3) {
+      // A typed country/region is required when abroad; NG needs a state.
+      const parsed = locationDetailsSchema.safeParse(basedAt);
+      if (!parsed.success) {
+        const next: LocationErrors = {};
+        for (const issue of parsed.error.issues) {
+          const key = issue.path[0] as keyof LocationDetails | undefined;
+          if (key && !next[key]) next[key] = issue.message;
+        }
+        setBasedErrors(next);
+        return;
+      }
+      setBasedErrors({});
+      setStep(4);
       return;
     }
 
@@ -207,7 +238,12 @@ export function IndividualSetup({
     setSubmitting(true);
     try {
       await usersService.updateProfile({
-        location,
+        locationDetails: {
+          country: basedAt.country.trim() || 'NG',
+          state: basedAt.state.trim(),
+          city: basedAt.city.trim(),
+        },
+        jobPreferences: { location: workLocation },
         experience: [
           {
             title: jobTitle.trim(),
@@ -245,6 +281,10 @@ export function IndividualSetup({
       description: 'You can always change this later.',
     },
     3: {
+      title: 'Where are you based?',
+      description: 'Shown on your profile so employers know where you are.',
+    },
+    4: {
       title: 'Lastly, what company do you work for?',
       description: 'Search for your employer and pick them from the list.',
     },
@@ -351,7 +391,7 @@ export function IndividualSetup({
         {step === 2 ? (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="location">Preferred location</Label>
-            <Select value={location} onValueChange={setLocation}>
+            <Select value={workLocation} onValueChange={setWorkLocation}>
               <SelectTrigger id="location" className="h-11 w-full rounded-xl">
                 <SelectValue placeholder="Choose a location" />
               </SelectTrigger>
@@ -370,6 +410,17 @@ export function IndividualSetup({
         ) : null}
 
         {step === 3 ? (
+          <LocationPicker
+            value={basedAt}
+            errors={basedErrors}
+            onChange={(next) => {
+              setBasedAt(next);
+              setBasedErrors({});
+            }}
+          />
+        ) : null}
+
+        {step === 4 ? (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="companyName">Company</Label>

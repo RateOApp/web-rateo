@@ -51,10 +51,14 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
   const [selfieRejected, setSelfieRejected] = useState(false);
 
   const [address, setAddress] = useState<AddressValues>({
-    // Companies store their address in `location`; the setup wizard wrote it.
-    address: user.location ?? '',
-    state: '',
-    city: '',
+    // Prefer the structured location the setup wizard wrote; fall back to the
+    // legacy single-string `location` for accounts that predate it.
+    address: user.locationDetails?.state
+      ? (user.locationDetails.street ?? '')
+      : (user.location ?? ''),
+    state: user.locationDetails?.state ?? '',
+    city: user.locationDetails?.city ?? '',
+    country: user.locationDetails?.country || 'NG',
   });
   const [method, setMethod] = useState<MethodValues>({
     cacNumber: '',
@@ -76,7 +80,11 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
     try {
       await kycService.submitBusinessManual({
         address: address.address.trim(),
-        state: address.state.trim(),
+        // Abroad: keep the country so the reviewer sees where it is.
+        state:
+          address.country && address.country !== 'NG'
+            ? [address.state.trim(), address.country.trim()].filter(Boolean).join(', ')
+            : address.state.trim(),
         city: address.city.trim(),
         cacNumber: method.cacNumber.trim(),
         attesterSelfieUrl: method.attesterSelfieUrl,

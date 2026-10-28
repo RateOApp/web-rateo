@@ -49,6 +49,14 @@ export type Education = {
   description?: string;
 };
 
+/** Structured location. `country` is 'NG' or a country name when abroad. */
+export type LocationDetails = {
+  country: string;
+  state: string;
+  city: string;
+  street?: string;
+};
+
 export type JobPreferences = {
   categories?: string[];
   jobTitle?: string;
@@ -82,6 +90,7 @@ export type User = {
   publicId?: string;
   avatar?: string;
   location?: string;
+  locationDetails?: LocationDetails;
   phone?: string;
   phone_number?: string;
   website?: string;
@@ -163,6 +172,7 @@ export type UpdateProfilePayload = {
   lastName?: string;
   location?: string;
   address?: string;
+  locationDetails?: LocationDetails;
   experience?: Experience[];
   education?: Education[];
   setupCompleted?: boolean;

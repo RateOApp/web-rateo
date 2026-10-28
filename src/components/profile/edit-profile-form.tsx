@@ -11,6 +11,12 @@ import { FieldShell } from '@/components/auth/text-field';
 import { AvatarPicker } from '@/components/profile/avatar-picker';
 import { EmailChangeDialog } from '@/components/profile/email-change-dialog';
 import { IdRequestDialog, type IdRequestKind } from '@/components/profile/id-request-dialog';
+import {
+  LocationPicker,
+  initialLocation,
+  validateLocation,
+  type LocationErrors,
+} from '@/components/shared/location-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,7 +29,7 @@ import {
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { GENDERS } from '@/lib/constants/company';
 import { usersService } from '@/services/users';
-import type { User } from '@/types/api';
+import type { LocationDetails, User } from '@/types/api';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -67,6 +73,10 @@ export function EditProfileForm({ user }: { user: User }) {
   const [gender, setGender] = useState(user.gender || 'Prefer not to say');
   const [dob, setDob] = useState(() => toDateInputValue(user.dob));
   const [avatar, setAvatar] = useState<string | null>(user.avatar ?? null);
+  const [locationValue, setLocationValue] = useState<LocationDetails>(() =>
+    initialLocation(user, 'individual'),
+  );
+  const [locationErrors, setLocationErrors] = useState<LocationErrors>({});
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +113,18 @@ export function EditProfileForm({ user }: { user: User }) {
       return;
     }
 
+    // Location is optional here (existing users may have none), but a half-filled
+    // one is rejected rather than silently dropped.
+    const hasLocationInput = Boolean(locationValue.state.trim() || locationValue.city.trim());
+    if (hasLocationInput) {
+      const found = validateLocation(locationValue);
+      if (Object.keys(found).length > 0) {
+        setLocationErrors(found);
+        return;
+      }
+    }
+    setLocationErrors({});
+
     setError(null);
     setSaving(true);
     try {
@@ -115,6 +137,15 @@ export function EditProfileForm({ user }: { user: User }) {
         gender,
         ...(dob && (user.dob || dobChanged) ? { dob: new Date(dob).toISOString() } : {}),
         ...(avatar ? { avatar } : {}),
+        ...(locationValue.state.trim()
+          ? {
+              locationDetails: {
+                country: locationValue.country.trim() || 'NG',
+                state: locationValue.state.trim(),
+                city: locationValue.city.trim(),
+              },
+            }
+          : {}),
       });
       await refreshUser();
       toast.success('Profile updated successfully');
@@ -231,6 +262,19 @@ export function EditProfileForm({ user }: { user: User }) {
               className="h-11"
             />
           </FieldShell>
+        </div>
+
+        {/* ---- location --------------------------------------------------- */}
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-brand-900">Location</p>
+          <LocationPicker
+            value={locationValue}
+            errors={locationErrors}
+            onChange={(next) => {
+              setLocationValue(next);
+              setLocationErrors({});
+            }}
+          />
         </div>
 
         {/* ---- contact email: OTP wizard or admin request ------------------ */}

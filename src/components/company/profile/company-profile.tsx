@@ -5,6 +5,7 @@ import {
   Briefcase,
   ChevronRight,
   Hourglass,
+  MapPin,
   Pencil,
   ShieldAlert,
   ShieldCheck,
@@ -105,6 +106,19 @@ export function CompanyProfile({ user: initialUser }: { user: User }) {
           <p className="mt-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
             <Briefcase aria-hidden="true" className="size-4" />
             {user.industry?.trim() || 'Industry not set'}
+          </p>
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
+            <MapPin aria-hidden="true" className="size-4" />
+            {user.location?.trim() ? (
+              user.location.trim()
+            ) : (
+              <Link
+                href="/dashboard/profile/edit"
+                className="text-brand-700 underline-offset-2 hover:underline"
+              >
+                Add your location
+              </Link>
+            )}
           </p>
           <p className="mt-1 flex items-center justify-center gap-1 text-sm font-semibold text-brand-900 sm:justify-start">
             {formatRating(averageRating)}

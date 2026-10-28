@@ -16,12 +16,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  EMPTY_LOCATION,
+  LocationPicker,
+  validateLocation,
+  type LocationErrors,
+} from '@/components/shared/location-picker';
 import { SuggestInput } from '@/components/setup/suggest-input';
 import { WizardShell } from '@/components/setup/wizard-shell';
 import {
   ABOUT_MAX,
   aboutSchema,
-  addressSchema,
   companyNameSchema,
   firstIssue,
   industrySchema,
@@ -32,7 +37,7 @@ import { INDUSTRIES } from '@/lib/constants/industries';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { hardNavigate } from '@/lib/navigate';
 import { usersService } from '@/services/users';
-import type { User } from '@/types/api';
+import type { LocationDetails, User } from '@/types/api';
 
 type StepId = 'name' | 'industry' | 'logo' | 'address' | 'about';
 
@@ -50,8 +55,8 @@ const HEADINGS: Record<StepId, { title: string; description: string }> = {
     description: 'A square PNG, JPG or WebP under 5MB works best.',
   },
   address: {
-    title: "What is your company's address?",
-    description: 'Where your team is based.',
+    title: 'Where is your company based?',
+    description: 'Shown on your profile so candidates know where you are.',
   },
   about: {
     title: 'About your company',
@@ -86,7 +91,8 @@ export function CompanySetup({
 
   const [companyName, setCompanyName] = useState(user.companyName ?? '');
   const [industry, setIndustry] = useState('');
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState<LocationDetails>(EMPTY_LOCATION);
+  const [addressErrors, setAddressErrors] = useState<LocationErrors>({});
   const [about, setAbout] = useState('');
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -171,7 +177,12 @@ export function CompanySetup({
       await usersService.updateProfile({
         companyName: companyName.trim(),
         industry,
-        address: address.trim(),
+        locationDetails: {
+          country: address.country.trim() || 'NG',
+          state: address.state.trim(),
+          city: address.city.trim(),
+          street: (address.street ?? '').trim(),
+        },
         description: about.trim(),
         ...(uploadedUrl ? { avatar: uploadedUrl } : {}),
         setupCompleted: true,
@@ -213,11 +224,12 @@ export function CompanySetup({
     }
 
     if (current === 'address') {
-      const parsed = addressSchema.safeParse(address);
-      if (!parsed.success) {
-        setError(firstIssue(parsed));
+      const found = validateLocation(address, { requireStreet: true, requireCity: true });
+      if (Object.keys(found).length > 0) {
+        setAddressErrors(found);
         return;
       }
+      setAddressErrors({});
       goTo(index + 1);
       return;
     }
@@ -361,22 +373,16 @@ export function CompanySetup({
         ) : null}
 
         {current === 'address' ? (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="address">Company address</Label>
-            <Textarea
-              id="address"
-              value={address}
-              rows={3}
-              placeholder="Enter full address"
-              className="min-h-24 rounded-xl"
-              aria-invalid={Boolean(error) || undefined}
-              aria-describedby={errorId}
-              onChange={(event) => {
-                setAddress(event.target.value);
-                setError(null);
-              }}
-            />
-          </div>
+          <LocationPicker
+            showStreet
+            streetLabel="Company address"
+            value={address}
+            errors={addressErrors}
+            onChange={(next) => {
+              setAddress(next);
+              setAddressErrors({});
+            }}
+          />
         ) : null}
 
         {current === 'about' ? (

@@ -33,7 +33,20 @@ export const workLocationSchema = z
   .trim()
   .min(1, 'Please choose where you would like to work.');
 
-/** Step 3, when "I'm currently not employed" is unticked. */
+/** Step 3: where the user is based. Street is never collected for individuals. */
+export const locationDetailsSchema = z
+  .object({
+    country: z.string().trim().min(1, 'Please enter your country.'),
+    state: z.string().trim().min(1, 'Please select your state.'),
+    city: z.string().trim(),
+    street: z.string().trim().optional(),
+  })
+  .refine((v) => v.country === 'NG' || v.state.length > 0, {
+    path: ['state'],
+    message: 'Please enter your state or region.',
+  });
+
+/** Step 4, when "I'm currently not employed" is unticked. */
 export const employerSchema = z
   .string()
   .trim()
