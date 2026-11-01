@@ -73,12 +73,19 @@ export function useCandidateSearch(keyword: string): {
 /** The submitted search (`?q=`), rendered as a results list on Explore. */
 export function useCandidateResults(keyword: string | undefined) {
   const trimmed = keyword?.trim() ?? '';
-  return useQuery({
-    queryKey: ['candidateSearch', trimmed] as const,
-    queryFn: () => candidatesService.search(trimmed),
+  const query = useInfiniteQuery({
+    queryKey: ['candidateSearch', 'results', trimmed] as const,
+    queryFn: ({ pageParam }) => candidatesService.search(trimmed, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page < last.pages ? last.page + 1 : undefined),
     enabled: trimmed.length > 0,
     staleTime: 60_000,
   });
+
+  const candidates: User[] = query.data?.pages.flatMap((page) => page.users ?? []) ?? [];
+  const totalCount: number = query.data?.pages[0]?.totalCount ?? candidates.length;
+
+  return { ...query, candidates, totalCount };
 }
 
 /** `GET /users/top-rated?role=individual` - server-ranked, no client sort needed. */

@@ -33,10 +33,10 @@ export const candidatesService = {
   },
 
   /** Same endpoint with a keyword; used by search and the suggestions dropdown. */
-  search(keyword: string): Promise<UsersResponse> {
+  search(keyword: string, pageNumber = 1): Promise<UsersResponse> {
     return api
       .get<UsersResponse>('/users', {
-        params: { role: 'individual', keyword: keyword.trim(), pageNumber: '1' },
+        params: { role: 'individual', keyword: keyword.trim(), pageNumber: String(pageNumber) },
       })
       .then((r) => r.data);
   },

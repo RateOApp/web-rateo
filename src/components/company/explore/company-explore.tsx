@@ -86,15 +86,20 @@ export function CompanyExplore({
 
       {keyword ? (
         /* ---- search results ------------------------------------------- */
-        <section>
+        <section className="flex flex-col">
           <h2 className="mb-3 text-lg font-bold text-brand-900">
             Search results for: {keyword}
           </h2>
+          {results.candidates.length ? (
+            <p className="mb-3 text-sm text-muted-foreground">
+              Showing {results.candidates.length} of {results.totalCount}
+            </p>
+          ) : null}
           {results.isLoading ? (
             <CardListSkeleton rows={3} />
-          ) : results.data?.users?.length ? (
+          ) : results.candidates.length ? (
             <ul className="flex flex-col gap-3">
-              {results.data.users.map((candidate) => (
+              {results.candidates.map((candidate) => (
                 <li key={candidate._id}>
                   <TalentRow
                     candidate={candidate}
@@ -117,6 +122,20 @@ export function CompanyExplore({
               }
             />
           )}
+          {results.hasNextPage ? (
+            <Button
+              variant="outline"
+              size="lg"
+              className="mt-4 h-11 self-center"
+              disabled={results.isFetchingNextPage}
+              onClick={() => void results.fetchNextPage()}
+            >
+              {results.isFetchingNextPage ? (
+                <Loader2 aria-hidden="true" className="animate-spin" />
+              ) : null}
+              Load more
+            </Button>
+          ) : null}
         </section>
       ) : loading ? (
         <CardListSkeleton rows={4} />

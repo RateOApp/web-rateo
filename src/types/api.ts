@@ -147,7 +147,7 @@ export type User = {
 /** A `User` known to be a company account. */
 export type Company = User & { role: 'company' };
 
-export type UsersResponse = Paginated & { users: User[] };
+export type UsersResponse = Paginated & { users: User[]; totalCount?: number };
 
 /** `GET /users/top-rated?role=…&limit=…` - server-ranked, no client sort needed. */
 export type TopRatedResponse = {
