@@ -7,6 +7,8 @@ import { Hero } from "./sections/hero";
 import { How } from "./sections/how";
 import { Marquee } from "./sections/marquee";
 import { Preview } from "./sections/preview";
+import { SiteFooter } from "./sections/site-footer";
+import { SiteHeader } from "./sections/site-header";
 import { Sprite } from "./sections/sprite";
 import { Talent } from "./sections/talent";
 import { Why } from "./sections/why";
@@ -27,8 +29,14 @@ export const metadata: Metadata = {
 
 export default function HirePage() {
   return (
-    <div className="hire" id="top">
+    <div className="hire" id="top" suppressHydrationWarning>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){var t=null;try{t=localStorage.getItem("rateo-theme")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}var r=document.currentScript&&document.currentScript.parentElement;if(r)r.setAttribute("data-theme",t)})()`,
+        }}
+      />
       <Sprite />
+      <SiteHeader />
       <Hero />
       <Marquee />
       <Why />
@@ -38,6 +46,7 @@ export default function HirePage() {
       <Compare />
       <Faq />
       <FinalCta />
+      <SiteFooter />
     </div>
   );
 }
