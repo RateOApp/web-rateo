@@ -27,6 +27,10 @@ export const publicNav: NavItem[] = [
   { label: "Search", href: "/search", icon: Search },
 ];
 
+/** Desktop-only header link; NOT in publicNav because MobilePublicTabs spreads publicNav and must stay 4 tabs. */
+export const employersLink: NavItem = { label: "For employers", href: "/hire", icon: Building2 };
+export const publicHeaderNav: NavItem[] = [...publicNav, employersLink];
+
 /** Mirrors the Expo app's individual bottom tabs. */
 export const individualTabs: NavItem[] = [
   { label: "Home", href: "/dashboard", icon: Home, match: "exact" },

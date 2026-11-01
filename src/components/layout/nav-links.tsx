@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isActive, publicNav, tabsForRole, type NavItem } from "@/lib/nav";
+import { isActive, publicHeaderNav, tabsForRole, type NavItem } from "@/lib/nav";
 import type { Role } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ function NavLinkList({
 
 /** Desktop links for the public header. */
 export function PublicNavLinks({ className }: { className?: string }) {
-  return <NavLinkList items={publicNav} withIcons={false} className={className} />;
+  return <NavLinkList items={publicHeaderNav} withIcons={false} className={className} />;
 }
 
 /** Desktop links for the dashboard header; mirrors the mobile tab bar. */

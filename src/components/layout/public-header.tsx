@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/logo";
 import { PublicNavLinks } from "@/components/layout/nav-links";
+import { PublicAuthButtons } from "@/components/layout/public-auth-buttons";
 import type { Session } from "@/lib/session";
 
 /** Sticky marketing/public header. The (public) layout supplies the session. */
@@ -22,25 +22,7 @@ export function PublicHeader({ session }: { session: Session | null }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          {session ? (
-            <Button asChild size="lg" className="h-9 px-4">
-              <Link href="/dashboard">Dashboard</Link>
-            </Button>
-          ) : (
-            <>
-              <Button
-                asChild
-                variant="ghost"
-                size="lg"
-                className="hidden h-9 px-4 sm:inline-flex"
-              >
-                <Link href="/login">Log in</Link>
-              </Button>
-              <Button asChild size="lg" className="h-9 px-4">
-                <Link href="/register">Sign up</Link>
-              </Button>
-            </>
-          )}
+          <PublicAuthButtons isLoggedIn={session !== null} />
         </div>
       </div>
     </header>
