@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { CountUp } from "./count-up";
 import { Ic, Stars } from "./svg-icon";
+import { StartHiringLink } from "./start-hiring-link";
 
 const FACES: { t: string; bg: string; color?: string }[] = [
   { t: "TA", bg: "#123C38" },
@@ -33,9 +33,9 @@ export function Hero() {
             performed, and show them what it’s like to work for you.
           </p>
           <div className="cta">
-            <Link className="btn" href="/register/company">
+            <StartHiringLink location="hero" className="btn" >
               Create employer account <Ic id="arrow" />
-            </Link>
+            </StartHiringLink>
             <a className="btn ghost" href="#how">
               See how it works
             </a>

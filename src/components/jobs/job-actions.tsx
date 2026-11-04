@@ -23,6 +23,7 @@ import { isDeadlinePast } from "@/lib/format";
 import { jobPath } from "@/lib/job-path";
 import { addPendingJob } from "@/lib/job-intent";
 import type { Role } from "@/lib/session";
+import { trackMeta } from "@/lib/meta-pixel";
 import { jobsService } from "@/services/jobs";
 import { isImportedJob, type AnyJob } from "@/types/api";
 
@@ -206,6 +207,7 @@ export function JobActions({
       "apply",
       () => jobsService.apply(job._id),
       () => {
+        trackMeta("SubmitApplication");
         setAppliedLocal(true);
         void queryClient.invalidateQueries({ queryKey: APPLIED_JOBS_KEY });
         toast.success("Application submitted");
@@ -245,6 +247,7 @@ export function JobActions({
       (result) => {
         setInterestOverride(true);
         refreshInterest();
+        if (!result.alreadyRegistered) trackMeta("SubmitApplication");
         if (result.alreadyRegistered) {
           toast.info("Already registered", {
             description: "You showed interest in this job before",

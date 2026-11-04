@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Ic } from "./svg-icon";
 import { Reveal } from "./reveal";
+import { StartHiringLink } from "./start-hiring-link";
 
 const SIDE: [string, string][] = [
   ["user", "Candidates"],
@@ -74,13 +74,13 @@ export function Preview() {
                     <Ic id="star" size={18} />
                     {r.score}
                   </div>
-                  <Link
+                  <StartHiringLink location="preview"
                     className="btn"
                     style={{ padding: "9px 18px", fontSize: 14 }}
-                    href="/register/company"
+                    
                   >
                     View
-                  </Link>
+                  </StartHiringLink>
                 </div>
               ))}
             </div>

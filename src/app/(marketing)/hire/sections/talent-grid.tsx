@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { Reveal } from "./reveal";
 import { useState, type ReactNode } from "react";
+import { StartHiringLink } from "./start-hiring-link";
 
 type Cat = "tech" | "design" | "sales" | "ops" | "finance";
 type Filter = "all" | Cat;
@@ -195,12 +195,12 @@ export function TalentGrid() {
                 ))}
               </div>
               <q>“{c.quote}”</q>
-              <Link className="more" href="/register/company">
+              <StartHiringLink location="talent_grid" className="more" >
                 See more
                 <svg className="i">
                   <use href="#arrow" />
                 </svg>
-              </Link>
+              </StartHiringLink>
             </div>
           </article>
         ))}

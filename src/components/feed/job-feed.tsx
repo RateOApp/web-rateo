@@ -14,6 +14,7 @@ import { JOB_FEED_KEY } from "@/hooks/use-jobs";
 import { MY_INTERESTS_KEY, useMyInterests } from "@/hooks/use-my-interests";
 import { SAVED_JOBS_KEY } from "@/hooks/use-saved-jobs";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { trackMeta } from "@/lib/meta-pixel";
 import { sortByMatch } from "@/lib/job-match";
 import { jobsService } from "@/services/jobs";
 import { isImportedJob, type AnyJob, type Job, type JobsResponse, type User } from "@/types/api";
@@ -81,6 +82,7 @@ export function JobFeed({ user, initialData }: JobFeedProps) {
             description: "You showed interest in this job before",
           });
         } else {
+          trackMeta("SubmitApplication");
           toast.success("Interest registered", {
             description: "The company will be notified of your application",
           });

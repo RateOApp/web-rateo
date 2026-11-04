@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Ic } from "./svg-icon";
 import { Reveal } from "./reveal";
+import { StartHiringLink } from "./start-hiring-link";
 
 export function FinalCta() {
   return (
@@ -9,9 +9,9 @@ export function FinalCta() {
         <Reveal className="box">
           <h2>Hire people you can vouch for.</h2>
           <p>Join the Nigerian employers building trust into every hire.</p>
-          <Link className="btn or" href="/register/company">
+          <StartHiringLink location="final_cta" className="btn or" >
             Create employer account <Ic id="arrow" />
-          </Link>
+          </StartHiringLink>
           <div className="stores">
             Or get the app:{" "}
             <a

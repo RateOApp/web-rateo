@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { MetaPixel } from "@/components/analytics/meta-pixel";
 import { Providers } from "@/providers/providers";
 import "./globals.css";
 
@@ -17,6 +18,10 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 // it must be set in the Vercel project env before the production build runs.
 // Leave it unset locally / on previews and no analytics script is rendered.
 const gaId = process.env.NEXT_PUBLIC_GA_ID?.trim();
+
+// Meta (Facebook) Pixel ID. Inlined at build time; unset locally / on previews
+// and no pixel script is rendered.
+const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
@@ -58,6 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${jakarta.variable} h-full`}>
       <body className="flex min-h-dvh flex-col bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
+        {metaPixelId ? <MetaPixel pixelId={metaPixelId} /> : null}
       </body>
       {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
     </html>

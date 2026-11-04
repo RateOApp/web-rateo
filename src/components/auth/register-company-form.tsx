@@ -22,6 +22,7 @@ import { authErrorMessage } from "@/lib/auth-error";
 import { suggestEmailFix } from "@/lib/email-typo";
 import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from "@/lib/referral-code";
 import { PASSWORDS_DO_NOT_MATCH, passwordSchema } from "@/lib/password";
+import { trackMeta } from "@/lib/meta-pixel";
 import { authService } from "@/services/auth";
 import { REFERRAL_SOURCE_WEB } from "@/types/referrals";
 
@@ -102,6 +103,7 @@ export function RegisterCompanyForm({
         // answers `referralApplied: false`.
         ...(code ? { referralCode: code, referralSource: REFERRAL_SOURCE_WEB } : {}),
       });
+      trackMeta("CompleteRegistration", { content_name: "company" });
       router.push(`/verify?email=${encodeURIComponent(email)}&mode=signup`);
     } catch (err) {
       setServerError(

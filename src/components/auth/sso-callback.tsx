@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { AuthCard } from "@/components/auth/auth-card";
 import { clerkErrorMessage, safeNextPath, SSO_STORAGE_KEY, type SsoIntent } from "@/lib/clerk";
+import { trackMeta } from "@/lib/meta-pixel";
 import { clearPendingReferralCode, readPendingReferralCode } from "@/lib/referral-code";
 import { REFERRAL_SOURCE_WEB } from "@/types/referrals";
 
@@ -178,6 +179,10 @@ export function SsoCallback() {
         await fail(message);
         return;
       }
+
+      // The backend answers 201 only when it created a new account (200 for an
+      // existing user signing in), and the route handler passes that through.
+      if (res.status === 201) trackMeta("CompleteRegistration", { content_name: "social" });
 
       const record = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
 

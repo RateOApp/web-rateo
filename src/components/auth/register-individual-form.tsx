@@ -23,6 +23,7 @@ import { suggestEmailFix } from "@/lib/email-typo";
 import { clearPendingJobs, readPendingJobs, toIntentPayload } from "@/lib/job-intent";
 import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from "@/lib/referral-code";
 import { PASSWORDS_DO_NOT_MATCH, passwordSchema } from "@/lib/password";
+import { trackMeta } from "@/lib/meta-pixel";
 import { authService } from "@/services/auth";
 import { REFERRAL_SOURCE_WEB } from "@/types/referrals";
 
@@ -111,6 +112,7 @@ export function RegisterIndividualForm({
         ...(code ? { referralCode: code, referralSource: REFERRAL_SOURCE_WEB } : {}),
         ...(pendingJobs.length ? { pendingJobs } : {}),
       });
+      trackMeta("CompleteRegistration", { content_name: "individual" });
       clearPendingJobs();
       router.push(
         `/verify?email=${encodeURIComponent(email)}&mode=signup${next ? `&next=${encodeURIComponent(next)}` : ""}`,

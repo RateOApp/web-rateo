@@ -15,6 +15,7 @@ import { useKycGate, useParticipationLock } from "@/components/dashboard/dashboa
 import { useMe } from "@/hooks/use-me";
 import { MY_JOBS_KEY } from "@/hooks/use-my-jobs";
 import { getApiErrorMessage } from "@/lib/api/errors";
+import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { jobsService } from "@/services/jobs";
 
 /**
@@ -47,6 +48,8 @@ export function PostJob() {
 
     try {
       await jobsService.create(toJobPayload(values));
+      trackMeta("Lead", { content_name: "job_post" });
+      trackMetaCustom("PostJob");
       await queryClient.invalidateQueries({ queryKey: MY_JOBS_KEY });
       setPosted(true);
     } catch (error) {

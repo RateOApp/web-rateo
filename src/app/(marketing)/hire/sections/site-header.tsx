@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "./theme-toggle";
+import { StartHiringLink } from "./start-hiring-link";
 
 export function SiteHeader() {
   return (
@@ -18,9 +19,9 @@ export function SiteHeader() {
             <Link className="login" href="/login">
               Log in
             </Link>
-            <Link className="btn" href="/register/company">
+            <StartHiringLink location="header" className="btn" >
               Start hiring
-            </Link>
+            </StartHiringLink>
           </nav>
           <ThemeToggle />
         </div>

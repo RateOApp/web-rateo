@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Ic } from "./svg-icon";
 import { Reveal } from "./reveal";
 import { TalentGrid } from "./talent-grid";
+import { StartHiringLink } from "./start-hiring-link";
 
 export function Talent() {
   return (
@@ -17,9 +17,9 @@ export function Talent() {
         </Reveal>
         <TalentGrid />
         <div className="tmore">
-          <Link className="btn" href="/register/company">
+          <StartHiringLink location="talent" className="btn" >
             See more candidates <Ic id="arrow" />
-          </Link>
+          </StartHiringLink>
           <p className="note">
             Sample profiles for illustration. Create a free account to browse real, verified talent.
           </p>

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Ic } from "./svg-icon";
 import { Reveal } from "./reveal";
+import { StartHiringLink } from "./start-hiring-link";
 
 const STEPS: { icon: string; title: string; body: string }[] = [
   { icon: "user", title: "Create your account", body: "Simple, secure and ready in minutes." },
@@ -84,9 +84,9 @@ export function How() {
             ))}
           </div>
           <p style={{ marginTop: 30 }}>
-            <Link className="btn or" href="/register/company">
+            <StartHiringLink location="how" className="btn or" >
               Get started free <Ic id="arrow" />
-            </Link>
+            </StartHiringLink>
           </p>
         </Reveal>
       </div>
