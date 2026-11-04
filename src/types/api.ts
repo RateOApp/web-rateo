@@ -100,7 +100,7 @@ export type User = {
   setupCompleted?: boolean;
   kycStatus?: KycStatus;
   /** Own profile only: Dojah instant check failed / manual review submitted. */
-  kycReview?: { autoCheckFailed: boolean; manualSubmitted: boolean };
+  kycReview?: { autoCheckFailed: boolean; manualSubmitted: boolean; autoVerified?: boolean };
   kyc?: Kyc;
   overallRating?: number;
   reviewCount?: number;

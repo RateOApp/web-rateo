@@ -121,7 +121,7 @@ export function CompanyHome({
         outstanding={participation.data?.outstanding ?? 0}
       />
 
-      <KycBanner status={user.kycStatus} />
+      <KycBanner status={user.kycStatus} kycReview={user.kycReview} />
 
       <EmployeeRatingPrompt user={user} />
 

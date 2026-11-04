@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Info } from 'lucide-react';
 
 import { AttestationStep } from '@/components/company/kyc/attestation-step';
 import {
@@ -49,6 +49,7 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selfieRejected, setSelfieRejected] = useState(false);
+  const [autoVerified, setAutoVerified] = useState(false);
 
   const [address, setAddress] = useState<AddressValues>({
     // Prefer the structured location the setup wizard wrote; fall back to the
@@ -66,6 +67,13 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
   });
 
   const status: KycStatus = user.kycStatus ?? 'none';
+  // Instant check failed and nothing submitted yet: an auto-failed company is
+  // usually `pending`, so this must win over the pending status card.
+  const needsManual =
+    step !== 'done' &&
+    status !== 'verified' &&
+    !!user.kycReview?.autoCheckFailed &&
+    !user.kycReview.manualSubmitted;
 
   async function handleSubmit() {
     if (submitting || !method.attesterSelfieUrl) return;
@@ -78,7 +86,7 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
     setSelfieRejected(false);
     setSubmitting(true);
     try {
-      await kycService.submitBusinessManual({
+      const result = await kycService.submitBusinessManual({
         address: address.address.trim(),
         // Abroad: keep the country so the reviewer sees where it is.
         state:
@@ -89,8 +97,9 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
         cacNumber: method.cacNumber.trim(),
         attesterSelfieUrl: method.attesterSelfieUrl,
       });
-      // The server has already set `pending`; refetch rather than writing the
-      // status locally.
+      // The server has already set `pending` (or `verified` when the CAC number
+      // auto-verified); refetch rather than writing the status locally.
+      setAutoVerified(result?.autoVerified === true || result?.kycStatus === 'verified');
       await queryClient.invalidateQueries({ queryKey: ['me'] });
       router.refresh();
       setStep('done');
@@ -107,20 +116,22 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
     }
   }
 
-  if (step !== 'done' && (status === 'verified' || status === 'pending')) {
+  if (step !== 'done' && !needsManual && (status === 'verified' || status === 'pending')) {
     return (
       <KycStatusCard
         status={status}
         description={
           status === 'verified'
             ? 'Your company has already been verified — no need to submit KYC again.'
-            : undefined
+            : user.kycReview?.manualSubmitted
+              ? 'Submitted for manual review — our team will approve you within 24–48 hours.'
+              : undefined
         }
       />
     );
   }
 
-  if (step !== 'done' && status === 'rejected' && !retrying) {
+  if (step !== 'done' && !needsManual && status === 'rejected' && !retrying) {
     return (
       <KycStatusCard
         status="rejected"
@@ -156,7 +167,31 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
         submitting={submitting}
         error={error}
         selfieRejected={selfieRejected}
+        autoCheckFailed={needsManual}
       />
+    );
+  }
+
+  if (step === 'done' && autoVerified) {
+    return (
+      <div className="flex flex-col items-center rounded-2xl border border-border bg-card px-6 py-10 text-center">
+        <span
+          aria-hidden="true"
+          className="mb-4 flex size-14 items-center justify-center rounded-full bg-accent-50 text-accent-600"
+        >
+          <CheckCircle2 className="size-7" />
+        </span>
+        <p className="text-lg font-semibold text-brand-900">Your company is verified 🎉</p>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          Your verified badge is now live on your profile.
+        </p>
+        <Button
+          className="mt-6 h-11 w-full max-w-xs bg-brand-700 text-white"
+          onClick={() => router.push('/dashboard/profile')}
+        >
+          Done
+        </Button>
+      </div>
     );
   }
 
@@ -170,10 +205,10 @@ export function CompanyKyc({ user: initialUser }: { user: User }) {
           <Info className="size-7" />
         </span>
         <p className="text-lg font-semibold text-brand-900">
-          Thank you! We will verify and get back to you.
+          Submitted for manual review
         </p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Our team will go through the details you&rsquo;ve provided. This usually takes 24hours.
+          Our team will approve you within 24–48 hours.
         </p>
         <Button
           className="mt-6 h-11 w-full max-w-xs bg-brand-700 text-white"

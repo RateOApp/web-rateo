@@ -133,7 +133,7 @@ export function CompanyProfile({ user: initialUser }: { user: User }) {
 
       <ParticipationStatCard rating={averageRating} score={score} status={status} />
 
-      <KycBanner status={user.kycStatus} />
+      <KycBanner status={user.kycStatus} kycReview={user.kycReview} />
 
       {/* ---- about ------------------------------------------------------- */}
       <section className="relative rounded-2xl border border-border bg-card p-4 sm:p-6">

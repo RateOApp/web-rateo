@@ -81,6 +81,8 @@ export type ManualKycPayload = {
 /** `POST /users/kyc` 200 body. */
 export type KycSubmitResponse = {
   message?: string;
+  /** Company manual submissions: the server auto-verified the CAC number. */
+  autoVerified?: boolean;
   kycStatus?: string;
   kyc?: {
     status?: string;

@@ -17,8 +17,8 @@ export function KycBanner({
   className,
 }: {
   status: KycStatus | undefined;
-  /** Individuals only: set when the instant check failed. */
-  kycReview?: { autoCheckFailed: boolean; manualSubmitted: boolean };
+  /** Set when the instant check failed (individuals and companies). */
+  kycReview?: { autoCheckFailed: boolean; manualSubmitted: boolean; autoVerified?: boolean };
   className?: string;
 }) {
   const [dismissed, setDismissed] = useState(false);
