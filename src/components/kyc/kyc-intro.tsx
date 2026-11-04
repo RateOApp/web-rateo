@@ -22,6 +22,10 @@ type Step = 'intro' | 'verify' | 'done';
  * card instead of the flow. A rejected account sees why and can restart in
  * place. Everyone else walks intro -> verify -> done, where "verify" offers the
  * instant Dojah path first and reveals the team-review form on request.
+ *
+ * When the instant (Dojah) check could not auto-verify the account
+ * (`kycReview.autoCheckFailed`) and no manual submission exists yet, the flow
+ * skips straight to a banner + the manual form, with instant retry secondary.
  */
 export function KycIntro({ user: initialUser }: { user: User }) {
   const router = useRouter();
@@ -34,12 +38,26 @@ export function KycIntro({ user: initialUser }: { user: User }) {
   const [retrying, setRetrying] = useState(false);
 
   const status: KycStatus = user.kycStatus ?? 'none';
+  const needsManual =
+    step !== 'done' &&
+    status !== 'verified' &&
+    !!user.kycReview?.autoCheckFailed &&
+    !user.kycReview.manualSubmitted;
 
-  if (step !== 'done' && (status === 'verified' || status === 'pending')) {
-    return <KycStatusCard status={status} />;
+  if (step !== 'done' && !needsManual && (status === 'verified' || status === 'pending')) {
+    return (
+      <KycStatusCard
+        status={status}
+        description={
+          status === 'pending' && user.kycReview?.manualSubmitted
+            ? 'Submitted for manual review — our team will approve you within 24–48 hours.'
+            : undefined
+        }
+      />
+    );
   }
 
-  if (step !== 'done' && status === 'rejected' && !retrying) {
+  if (step !== 'done' && !needsManual && status === 'rejected' && !retrying) {
     return (
       <KycStatusCard
         status="rejected"
@@ -77,6 +95,38 @@ export function KycIntro({ user: initialUser }: { user: User }) {
     );
   }
 
+  const manualForm = (
+    <KycManualForm
+      onSubmitted={() => {
+        // The server has already set `pending`; refetch rather than
+        // writing the status locally.
+        void queryClient.invalidateQueries({ queryKey: ['me'] });
+        router.refresh();
+        setStep('done');
+      }}
+    />
+  );
+
+  if (needsManual) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div role="alert" className="rounded-2xl border border-danger/30 bg-danger/10 p-4 sm:p-5">
+          <p className="text-base font-semibold text-brand-900">
+            Instant verification didn&rsquo;t go through
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Submit your NIN and a live selfie for manual review. Our team will approve you within
+            24–48 hours.
+          </p>
+        </div>
+        {manualForm}
+        <Button asChild variant="outline" className="h-11 w-full">
+          <Link href="/dashboard/kyc/dojah">Try instant verification again</Link>
+        </Button>
+      </div>
+    );
+  }
+
   if (step === 'verify') {
     return (
       <div className="flex flex-col gap-4">
@@ -92,15 +142,7 @@ export function KycIntro({ user: initialUser }: { user: User }) {
         </Button>
 
         {showManual ? (
-          <KycManualForm
-            onSubmitted={() => {
-              // The server has already set `pending`; refetch rather than
-              // writing the status locally.
-              void queryClient.invalidateQueries({ queryKey: ['me'] });
-              router.refresh();
-              setStep('done');
-            }}
-          />
+          manualForm
         ) : (
           <button
             type="button"

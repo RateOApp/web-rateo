@@ -52,6 +52,8 @@ export type KycUpdatedPayload = {
   // layer's normalized 'approved' — accept both so the handler can too.
   kyc?: { status?: PublicKycStatus | KycStatus };
   message?: string;
+  /** Instant verification couldn't auto-verify; steer to manual review. */
+  suggestManual?: boolean;
   jobIntents?: JobIntentSummary;
   at?: string;
 };

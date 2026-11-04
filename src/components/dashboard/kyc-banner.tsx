@@ -13,9 +13,12 @@ import type { KycStatus } from "@/types/api";
  */
 export function KycBanner({
   status,
+  kycReview,
   className,
 }: {
   status: KycStatus | undefined;
+  /** Individuals only: set when the instant check failed. */
+  kycReview?: { autoCheckFailed: boolean; manualSubmitted: boolean };
   className?: string;
 }) {
   const [dismissed, setDismissed] = useState(false);
@@ -23,10 +26,19 @@ export function KycBanner({
   if (!status || status === "verified" || dismissed) return null;
 
   const pending = status === "pending";
-  const title = pending ? "Verification pending" : "Complete KYC to get verified";
+  const needsManual = !pending && !!kycReview?.autoCheckFailed && !kycReview.manualSubmitted;
+  const title = pending
+    ? "Verification pending"
+    : needsManual
+      ? "Instant verification didn't go through"
+      : "Complete KYC to get verified";
   const subtitle = pending
-    ? "This usually takes 24 hours"
-    : "Boost your credibility with a verified badge. Tap to start.";
+    ? kycReview?.manualSubmitted
+      ? "Submitted for manual review. Our team will approve you within 24–48 hours."
+      : "This usually takes 24 hours"
+    : needsManual
+      ? "Submit your details for manual review. Our team will approve you within 24–48 hours."
+      : "Boost your credibility with a verified badge. Tap to start.";
 
   const body = (
     <>

@@ -52,7 +52,7 @@ export function IndividualHome({
         </div>
       </header>
 
-      <KycBanner status={user.kycStatus} />
+      <KycBanner status={user.kycStatus} kycReview={user.kycReview} />
 
       <ParticipationBanner
         status={participation.data?.participationStatus ?? null}

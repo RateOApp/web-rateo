@@ -111,7 +111,13 @@ export type DojahInitResponse = {
 /** `POST /users/kyc/dojah/confirm` and `/cancel`. */
 export type DojahStatusResponse = {
   status?: string;
+  /** Legacy (pre Nov 2026) /confirm fallback flag; no longer sent. */
   pending?: boolean;
+  /**
+   * `/confirm`: Dojah had no populated result yet, so kycStatus was left
+   * untouched — the webhook will decide and the socket/`me` refetch updates it.
+   */
+  awaiting?: boolean;
   kyc?: { status?: string };
 };
 

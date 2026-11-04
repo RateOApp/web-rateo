@@ -226,6 +226,13 @@ function GlobalSocketListeners({
           { action: { label: "View", onClick: () => navigate("/dashboard/saved") } },
         );
       }
+    } else if (payload.suggestManual) {
+      toast.message("Instant verification didn't go through", {
+        description:
+          description ||
+          "Submit your details for manual review. Our team will approve you within 24–48 hours.",
+        action: { label: "Submit", onClick: () => navigate("/dashboard/kyc") },
+      });
     } else {
       toast.message("Verification update", { description });
     }

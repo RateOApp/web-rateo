@@ -89,9 +89,12 @@ export function DojahWidget({ flow = 'individual' }: { flow?: 'individual' | 'bu
     if (settled.current) return;
     settled.current = true;
     setFinishing(true);
-    await kycService.dojahConfirm().catch(() => {});
+    // A nudge only: the server never moves kycStatus on this signal alone (it
+    // answers `awaiting: true` until Dojah's webhook decides). Nothing is
+    // written locally — the `me` refetch shows whatever the server holds.
+    await kycService.dojahConfirm().catch(() => null);
     await queryClient.invalidateQueries({ queryKey: ['me'] });
-    toast.success("We're verifying your identity — your badge updates shortly.");
+    toast.success("Thanks — we're checking your result. You'll be notified shortly.");
     router.push('/dashboard/profile');
     router.refresh();
   }, [queryClient, router]);
