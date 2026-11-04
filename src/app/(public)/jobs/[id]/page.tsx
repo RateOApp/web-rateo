@@ -202,16 +202,13 @@ export default async function JobDetailPage({
               </div>
             </div>
 
-            {badges.length || imported || closed ? (
+            {badges.length || closed ? (
               <div className="mt-4 flex flex-wrap items-center gap-1.5">
                 {badges.map((badge) => (
                   <Badge key={badge} variant="secondary" className="max-w-full truncate">
                     {badge}
                   </Badge>
                 ))}
-                {imported ? (
-                  <Badge className="bg-accent-50 text-accent-600">Imported</Badge>
-                ) : null}
                 {closed ? <Badge variant="destructive">Closed</Badge> : null}
               </div>
             ) : null}
@@ -319,11 +316,7 @@ export default async function JobDetailPage({
               {!imported && typeof job.minRating === "number" && job.minRating > 0 ? (
                 <DetailRow label="Minimum rating" value={`${job.minRating.toFixed(1)} stars`} />
               ) : null}
-              {imported ? (
-                <DetailRow label="Source" value="Imported listing" />
-              ) : (
-                <DetailRow label="Status" value={closed ? "Closed" : "Open"} />
-              )}
+              <DetailRow label="Status" value={closed ? "Closed" : "Open"} />
             </dl>
           </Section>
         </div>

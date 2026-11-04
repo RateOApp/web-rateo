@@ -138,7 +138,7 @@ export function JobPreferencesWizard({ user }: { user: User }) {
       <div className="flex flex-col gap-4">
         <div>
           <h2 className="text-xl font-bold text-brand-900">
-            What field would you like to see jobs in?
+            What type of jobs are you interested in?
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Selected {selected.length} of {MAX_CATEGORIES}

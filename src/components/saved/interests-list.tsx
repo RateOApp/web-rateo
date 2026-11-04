@@ -9,7 +9,6 @@ import { RemoveDialog } from "@/components/saved/remove-dialog";
 import { CardListSkeleton } from "@/components/shared/card-list-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { UserAvatar } from "@/components/shared/user-avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { JOB_FEED_KEY } from "@/hooks/use-jobs";
 import { MY_INTERESTS_KEY, useMyInterests } from "@/hooks/use-my-interests";
@@ -107,9 +106,6 @@ export function InterestsList() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {interestCount > 0 ? `${interestCount} interested` : "Be the first"}
                 </p>
-                <Badge variant="secondary" className="mt-2">
-                  Imported
-                </Badge>
               </div>
 
               <div className="flex shrink-0 flex-col items-end gap-2">

@@ -53,18 +53,13 @@ export function JobCard({ job, className }: { job: AnyJob; className?: string })
             <p className="mt-1 text-sm break-words text-muted-foreground">{meta}</p>
           ) : null}
 
-          {badges.length || imported || closed ? (
+          {badges.length || closed ? (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {badges.map((badge) => (
                 <Badge key={badge} variant="secondary" className="max-w-full truncate">
                   {badge}
                 </Badge>
               ))}
-              {imported ? (
-                <Badge className="bg-accent-50 text-accent-600">
-                  {job.pendingVerification ? "Claimed · verifying" : "Imported"}
-                </Badge>
-              ) : null}
               {closed ? <Badge variant="destructive">Closed</Badge> : null}
             </div>
           ) : null}

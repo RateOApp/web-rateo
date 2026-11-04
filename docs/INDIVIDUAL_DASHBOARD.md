@@ -237,7 +237,7 @@ Empty **No resume uploaded.** Also show a read-only summary: name, ID, title, lo
 skills, work experience list.
 
 ### Job preferences `/dashboard/preferences`
-Step 1: **What field would you like to see jobs in?**, **Selected {n} of 3**, grid of the 31
+Step 1: **What type of jobs are you interested in?**, **Selected {n} of 3**, grid of the 31
 industries with counts from `GET /jobs/categories` (**No open jobs** / **{n} jobs**), search
 filter, max 3 (**Limit reached** / **You can choose up to 3 industries.**). **Next**.
 Step 2: chips of chosen categories; **Job description** (→ `jobTitle`, e.g. Software Engineer);

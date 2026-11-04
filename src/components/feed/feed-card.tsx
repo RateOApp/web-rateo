@@ -79,11 +79,6 @@ export function FeedCard({
                   OG
                 </Badge>
               ) : null}
-              {imported ? (
-                <Badge className="bg-accent-50 text-accent-600">
-                  {job.pendingVerification ? "Claimed · verifying" : "Imported"}
-                </Badge>
-              ) : null}
             </div>
 
             {imported ? (
