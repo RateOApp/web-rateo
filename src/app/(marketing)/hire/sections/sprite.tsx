@@ -14,6 +14,7 @@ export function Sprite() {
     <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></symbol>
     <symbol id="msg" viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-12 7l-5 1.5L5 16a8 8 0 1116-4z"/></symbol>
     <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></symbol>
     <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="quote" viewBox="0 0 24 24"><path d="M7 7h4v5c0 3-1.5 5-4 5M15 7h4v5c0 3-1.5 5-4 5"/></symbol>
     <symbol id="moon" viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z"/></symbol>

@@ -1,3 +1,4 @@
+import { ExplainerVideo } from "./explainer-video";
 import { Ic } from "./svg-icon";
 import { Reveal } from "./reveal";
 import { StartHiringLink } from "./start-hiring-link";
@@ -62,6 +63,7 @@ export function How() {
                   <i className="m">✓</i>
                 </div>
               </div>
+              <ExplainerVideo />
             </div>
           </div>
         </Reveal>

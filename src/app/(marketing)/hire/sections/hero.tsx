@@ -37,7 +37,7 @@ export function Hero() {
               Create employer account <Ic id="arrow" />
             </StartHiringLink>
             <a className="btn ghost" href="#how">
-              See how it works
+              <Ic id="play" className="i play" /> See how it works
             </a>
           </div>
           <div className="proof">
