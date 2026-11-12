@@ -17,7 +17,15 @@ import type { Message } from '@/types/messages';
 import type { SupportMessage, SupportTicketStatus } from '@/types/support';
 
 /** `{ reader, sender }` - ids of the reader and the sender whose messages were read. */
-export type MessagesReadPayload = { reader: string; sender: string };
+export type MessagesReadPayload = { reader: string; sender: string; readAt?: string };
+
+/** My messages to `receiver` reached their device (emitted to the sender). */
+export type MessagesDeliveredPayload = {
+  receiver: string;
+  sender: string;
+  messageIds: string[];
+  deliveredAt: string;
+};
 
 /** Emitted into the pair room after an edit, reaction or delete. */
 export type MessageUpdatedPayload =
@@ -83,6 +91,7 @@ export type ServerToClientEvents = {
   receive_message: (message: Message) => void;
   new_message_notification: (message: Message) => void;
   messages_read: (payload: MessagesReadPayload) => void;
+  messages_delivered: (payload: MessagesDeliveredPayload) => void;
   message_updated: (payload: MessageUpdatedPayload) => void;
   typing: (payload: TypingPayload) => void;
   stop_typing: (payload: TypingPayload) => void;

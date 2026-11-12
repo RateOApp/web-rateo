@@ -44,6 +44,9 @@ export type Message = {
   content?: string;
   attachments?: string[];
   read?: boolean;
+  /** ISO timestamps; absent on messages created before receipts shipped. */
+  deliveredAt?: string | null;
+  readAt?: string | null;
   replyTo?: string | ReplyPreview | null;
   isDeleted?: boolean;
   isEdited?: boolean;
@@ -130,6 +133,17 @@ export function messagePreview(message: Message | null | undefined): string {
   const text = message.content?.trim();
   if (text) return text;
   return message.attachments?.length ? 'Photo' : 'No messages yet';
+}
+
+/** Delivery state of a message I sent. */
+export type MessageStatus = 'sending' | 'failed' | 'sent' | 'delivered' | 'read';
+
+/** `readAt || read` -> read; else `deliveredAt` -> delivered; else sent. */
+export function messageStatus(message: ThreadMessage): MessageStatus {
+  if (message.localStatus) return message.localStatus === 'failed' ? 'failed' : 'sending';
+  if (message.readAt || message.read) return 'read';
+  if (message.deliveredAt) return 'delivered';
+  return 'sent';
 }
 
 /** The pair room both participants join: `[a, b].sort().join('_')`. */

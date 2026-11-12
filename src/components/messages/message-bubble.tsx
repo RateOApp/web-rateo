@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { RotateCcw } from "lucide-react";
+import { MessageTicks } from "@/components/messages/message-ticks";
 import { MessageActions } from "@/components/messages/message-actions";
 import { MessageImage } from "@/components/messages/message-image";
 import { MessageText } from "@/components/messages/message-text";
@@ -9,6 +10,7 @@ import { toDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   groupReactions,
+  messageStatus,
   messageUserName,
   refId,
   refUser,
@@ -77,14 +79,9 @@ export function MessageBubble({
         ? messageUserName(replySenderDoc)
         : otherName;
 
+  const deliveryState = messageStatus(message);
   const status =
-    message.localStatus === "sending"
-      ? "Sending"
-      : message.localStatus === "failed"
-        ? "Failed"
-        : message.read
-          ? "Read"
-          : "Sent";
+    deliveryState === "sending" ? "Sending" : deliveryState === "failed" ? "Failed" : null;
 
   // A deleted message has no delivery state worth showing - "Sent" under
   // "Message deleted" reads like the deletion failed.
@@ -206,6 +203,9 @@ export function MessageBubble({
           )}
         >
           {meta}
+          {mine && !deleted && !status ? (
+            <MessageTicks status={deliveryState} tone="bubble" className="ml-1" />
+          ) : null}
           {message.localStatus === "failed" ? (
             <button
               type="button"

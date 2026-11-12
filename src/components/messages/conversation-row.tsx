@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { format, isToday } from "date-fns";
+import { MessageTicks } from "@/components/messages/message-ticks";
 import { dayLabel } from "@/components/messages/date-divider";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { toDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { conversationName, messagePreview, type Conversation } from "@/types/messages";
+import {
+  conversationName,
+  messagePreview,
+  messageStatus,
+  refId,
+  type Conversation,
+} from "@/types/messages";
 
 /** Time for today's chats, a day label for older ones. */
 function stamp(value: string | undefined): string {
@@ -32,6 +39,9 @@ export function ConversationRow({
   const name = conversationName(conversation);
   const unread = conversation.unreadCount ?? 0;
   const preview = messagePreview(conversation.lastMessage);
+  const last = conversation.lastMessage;
+  const lastSenderId = refId(last?.sender);
+  const sentByMe = Boolean(last && !last.isDeleted && lastSenderId && lastSenderId !== id);
   const time = stamp(conversation.lastMessage?.createdAt);
 
   return (
@@ -58,13 +68,16 @@ export function ConversationRow({
             ) : null}
           </span>
           <span className="mt-0.5 flex items-center justify-between gap-2">
-            <span
-              className={cn(
-                "truncate text-xs",
-                unread > 0 ? "font-medium text-brand-900" : "text-muted-foreground",
-              )}
-            >
-              {preview}
+            <span className="flex min-w-0 items-center gap-1">
+              {sentByMe && last ? <MessageTicks status={messageStatus(last)} /> : null}
+              <span
+                className={cn(
+                  "truncate text-xs",
+                  unread > 0 ? "font-medium text-brand-900" : "text-muted-foreground",
+                )}
+              >
+                {preview}
+              </span>
             </span>
             {unread > 0 ? (
               <span className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-accent-50 px-1.5 text-[0.625rem] font-bold text-accent-600 tabular-nums">

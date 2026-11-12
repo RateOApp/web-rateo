@@ -287,8 +287,26 @@ export function ChatThread({ userId }: { userId: string }) {
 
   useSocketEvent("messages_read", (payload) => {
     if (String(payload.reader) !== userId) return;
+    const readAt = payload.readAt ?? new Date().toISOString();
     setMessages((prev) =>
-      prev.map((row) => (refId(row.sender) === myId && !row.read ? { ...row, read: true } : row)),
+      prev.map((row) =>
+        refId(row.sender) === myId && !row.localStatus && !row.read && !row.readAt
+          ? { ...row, read: true, readAt, deliveredAt: row.deliveredAt ?? readAt }
+          : row,
+      ),
+    );
+  });
+
+  useSocketEvent("messages_delivered", (payload) => {
+    if (String(payload.receiver) !== userId) return;
+    const ids = new Set((payload.messageIds ?? []).map(String));
+    setMessages((prev) =>
+      prev.map((row) => {
+        if (refId(row.sender) !== myId || row.localStatus || row.deliveredAt) return row;
+        // Fall back to every undelivered row when the server sent no ids.
+        if (ids.size > 0 && !ids.has(row._id)) return row;
+        return { ...row, deliveredAt: payload.deliveredAt };
+      }),
     );
   });
 

@@ -20,7 +20,8 @@ import { SAVED_JOBS_KEY } from "@/hooks/use-saved-jobs";
 import { CONVERSATIONS_KEY, UNREAD_MESSAGES_KEY } from "@/hooks/use-messages";
 import { connectSocket, disconnectSocket, type AppSocket } from "@/lib/socket";
 import { authService } from "@/services/auth";
-import { messageUserName, refId, refUser } from "@/types/messages";
+import { messagesService } from "@/services/messages";
+import { messageUserName, refId, refUser, type Conversation } from "@/types/messages";
 import type { ServerToClientEvents } from "@/types/socket";
 
 type SocketContextValue = {
@@ -130,6 +131,18 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, [userId]);
 
+  // Back in the tab -> anything sent to me while it was hidden counts as delivered.
+  useEffect(() => {
+    if (!userId) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void messagesService.markDelivered().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [userId]);
+
   const value = useMemo<SocketContextValue>(() => ({ socket, connected }), [socket, connected]);
 
   const handleLogout = useCallback(() => {
@@ -180,6 +193,43 @@ function GlobalSocketListeners({
   refresh: () => void;
   navigate: (href: string) => void;
 }) {
+  const queryClient = useQueryClient();
+
+  /** Patches the last message of the conversation with `partnerId` if I sent it. */
+  const patchLastMessage = (
+    partnerId: string,
+    patch: (last: NonNullable<Conversation["lastMessage"]>) => Conversation["lastMessage"],
+  ) => {
+    queryClient.setQueryData<Conversation[]>(CONVERSATIONS_KEY, (prev) =>
+      prev?.map((conversation) => {
+        const last = conversation.lastMessage;
+        if (conversation.user._id !== partnerId || !last) return conversation;
+        const senderId = refId(last.sender);
+        if (!senderId || senderId === partnerId) return conversation;
+        const next = patch(last);
+        return next === last ? conversation : { ...conversation, lastMessage: next };
+      }),
+    );
+  };
+
+  useSocketEvent("messages_delivered", (payload) => {
+    const ids = new Set((payload.messageIds ?? []).map(String));
+    patchLastMessage(String(payload.receiver), (last) =>
+      last.deliveredAt || (ids.size > 0 && !ids.has(last._id))
+        ? last
+        : { ...last, deliveredAt: payload.deliveredAt },
+    );
+  });
+
+  useSocketEvent("messages_read", (payload) => {
+    const readAt = payload.readAt ?? new Date().toISOString();
+    patchLastMessage(String(payload.reader), (last) =>
+      last.read || last.readAt
+        ? last
+        : { ...last, read: true, readAt, deliveredAt: last.deliveredAt ?? readAt },
+    );
+  });
+
   useSocketEvent("notification", () => {
     invalidate(NOTIFICATIONS_KEY);
   });

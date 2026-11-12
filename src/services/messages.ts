@@ -92,6 +92,11 @@ export const messagesService = {
       .then((r) => r.data);
   },
 
+  /** `PUT /messages/delivered` - marks everything sent to me as delivered. */
+  markDelivered(): Promise<ApiMessage> {
+    return api.put<ApiMessage>('/messages/delivered').then((r) => r.data);
+  },
+
   /** `GET /messages/unread-count` -> the badge number. */
   unreadCount(): Promise<number> {
     return api
