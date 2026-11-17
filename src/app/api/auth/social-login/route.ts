@@ -31,6 +31,8 @@ const bodySchema = z.object({
   companyName: z.string().trim().min(1).max(200).optional(),
   referralCode: z.string().trim().max(MAX_REFERRAL_CODE_LENGTH).optional(),
   referralSource: z.enum(['typed', 'link', 'clipboard', 'social', 'web']).optional(),
+  acceptedTerms: z.boolean().optional(),
+  termsVersion: z.string().trim().max(32).optional(),
 });
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -59,7 +61,8 @@ export async function POST(req: NextRequest): Promise<Response> {
   // Unknown keys are dropped rather than rejected - the client is ours, but
   // nothing beyond role/companyName may ever reach the backend.
   const parsed = bodySchema.safeParse(isRecord(raw) ? raw : {});
-  const { role, companyName, referralCode, referralSource } = parsed.success ? parsed.data : {};
+  const { role, companyName, referralCode, referralSource, acceptedTerms, termsVersion } =
+    parsed.success ? parsed.data : {};
   const code = normaliseReferralCode(referralCode);
 
   const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress;
@@ -93,6 +96,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     ...(role === 'company' && companyName ? { companyName } : {}),
     ...(code ? { referralCode: code, referralSource: referralSource ?? 'web' } : {}),
     ...(scalooRef ? { scalooRef } : {}),
+    ...(acceptedTerms === true ? { acceptedTerms: true, termsVersion } : {}),
   };
 
   let upstream: Response;

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
+import { TERMS_VERSION } from "@/lib/terms";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
@@ -86,6 +87,15 @@ const CLAUSES: Clause[] = [
     ],
   },
   {
+    id: "off-platform",
+    title: "Keeping hiring and communication on Rate’O",
+    paragraphs: [
+      "Rate’O exists so that hiring, ratings and communication happen in one trusted place. You must not use Rate’O to find, recruit or contact other users and then move them to WhatsApp, Telegram, other messaging apps or other job or recruitment platforms in order to recruit them, redirect them to a competing service, or avoid Rate’O’s processes (including identity verification, ratings and reporting).",
+      "You must also not harvest, scrape or collect other users’ contact details from the Service, or mass-message users in order to take them off Rate’O.",
+      "Accounts found doing this will be banned or removed, and the email address, phone number and identity documents linked to them will be blocked from creating new accounts. Sharing contact details after a genuine hire or working relationship has been established on Rate’O is not a breach.",
+    ],
+  },
+  {
     id: "disclaimer-of-warranties",
     title: "Disclaimer of Warranties",
     paragraphs: [
@@ -120,9 +130,10 @@ const CLAUSES: Clause[] = [
     id: "account-enforcement",
     title: "Account warnings, suspensions, bans and appeals",
     paragraphs: [
-      "We want Rate’O to be a place people can trust. We may take action on an account if we find things like: a fake identity, fraud or scams, fake or paid-for reviews, harassment or abuse, spam, impersonation, fraudulent KYC documents, inappropriate content, or any other breach of these Terms of Use.",
+      "We want Rate’O to be a place people can trust. We may take action on an account if we find things like: a fake identity, fraud or scams, fake or paid-for reviews, harassment or abuse, spam, impersonation, fraudulent KYC documents, inappropriate content, using Rate’O to recruit people and move them to WhatsApp or other platforms (see “Keeping hiring and communication on Rate’O”), or any other breach of these Terms of Use.",
       "Warnings: for less serious or first-time issues we may send a warning. Your account keeps working, but repeat issues can lead to a suspension or ban.",
       "Suspensions: a suspension can be for a set time (for example 7 days) or indefinite while we review. While your account is suspended you can’t log in or use it, apply for or post jobs, message anyone, rate or review, or appear in search. A timed suspension lifts automatically when it ends. When you try to log in, you’ll see why, until when, and how to appeal.",
+      "Removal: we may also remove an account for serious or repeated breaches. A removed account is hidden everywhere on Rate’O and you can’t sign up again with the same email address, phone number or identity documents, but you can still appeal if you believe it was a mistake.",
       "Bans: a ban is permanent unless it is overturned on appeal. A ban blocks the email address, phone number and identity documents linked to the account from being used to create a new account.",
       "How to appeal: log in to see your notice and submit one appeal for each action, explaining what happened. We aim to respond within 7 days and will email you our decision. If the appeal succeeds, the action is lifted.",
       "This is different from deleting your own account. If you delete your account yourself, there is a 14-day grace period and logging in during that time cancels the deletion. After that, your profile is hidden and the reviews you left or received are retained.",
@@ -143,7 +154,7 @@ export default function TermsOfUsePage() {
     <PageContainer>
       <PageHeader
         title="Terms of Use"
-        description="Last updated 11 September 2026. These terms apply to the Rate’O website, web app and mobile apps."
+        description={`Last updated 17 November 2026 (version ${TERMS_VERSION}). These terms apply to the Rate’O website, web app and mobile apps.`}
       />
 
       <article className="max-w-3xl">

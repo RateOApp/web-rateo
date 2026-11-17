@@ -28,6 +28,11 @@ function isNotFound(error: unknown): boolean {
 }
 
 export const usersService = {
+  /** Records acceptance of the given Terms version for the signed-in user. */
+  acceptTerms(version: string): Promise<unknown> {
+    return api.post('/users/me/accept-terms', { version }).then((r) => r.data);
+  },
+
   /**
    * The signed-in user. Uses `/auth/verify-token`, which returns the FULL user
    * document (`{ valid, user }`); `/auth/profile` omits `kycStatus`,

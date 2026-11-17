@@ -16,6 +16,7 @@ import { PhoneField } from "@/components/auth/phone-field";
 import { ReferralCodeField } from "@/components/auth/referral-code-field";
 import { RoleSwitch } from "@/components/auth/role-switch";
 import { SocialSection } from "@/components/auth/social-section";
+import { TermsCheckbox, TERMS_REQUIRED_MESSAGE } from "@/components/auth/terms-checkbox";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { describedBy, FieldShell, TextField } from "@/components/auth/text-field";
 import { authErrorMessage } from "@/lib/auth-error";
@@ -23,6 +24,7 @@ import { suggestEmailFix } from "@/lib/email-typo";
 import { clearPendingJobs, readPendingJobs, toIntentPayload } from "@/lib/job-intent";
 import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from "@/lib/referral-code";
 import { PASSWORDS_DO_NOT_MATCH, passwordSchema } from "@/lib/password";
+import { TERMS_VERSION } from "@/lib/terms";
 import { trackMeta } from "@/lib/meta-pixel";
 import { authService } from "@/services/auth";
 import { REFERRAL_SOURCE_WEB } from "@/types/referrals";
@@ -47,6 +49,7 @@ const schema = z
       .toUpperCase()
       .max(MAX_REFERRAL_CODE_LENGTH, "Referral codes are at most 12 characters.")
       .optional(),
+    acceptedTerms: z.boolean().refine((v) => v === true, { message: TERMS_REQUIRED_MESSAGE }),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: PASSWORDS_DO_NOT_MATCH,
@@ -84,6 +87,7 @@ export function RegisterIndividualForm({
       password: "",
       confirmPassword: "",
       referralCode: initialReferralCode,
+      acceptedTerms: false,
     },
   });
 
@@ -92,6 +96,7 @@ export function RegisterIndividualForm({
   // `useWatch` (not `watch`) so the React Compiler can still memoize this tree.
   const password = useWatch({ control, name: "password" });
   const referralCode = normaliseReferralCode(useWatch({ control, name: "referralCode" }));
+  const acceptedTerms = useWatch({ control, name: "acceptedTerms" }) === true;
 
   async function onSubmit(values: RegisterValues) {
     setServerError(null);
@@ -107,6 +112,8 @@ export function RegisterIndividualForm({
         password: values.password,
         // Optional: the backend stores '' when no number was typed.
         phoneNumber: values.phoneNumber,
+        acceptedTerms: true,
+        termsVersion: TERMS_VERSION,
         // An unknown code never fails the signup - the backend skips it and
         // answers `referralApplied: false`.
         ...(code ? { referralCode: code, referralSource: REFERRAL_SOURCE_WEB } : {}),
@@ -251,34 +258,26 @@ export function RegisterIndividualForm({
           {...register("referralCode")}
         />
 
+        <Controller
+          control={control}
+          name="acceptedTerms"
+          render={({ field }) => (
+            <TermsCheckbox
+              checked={field.value === true}
+              onChange={field.onChange}
+              error={errors.acceptedTerms?.message}
+            />
+          )}
+        />
+
         <FormAlert>{serverError}</FormAlert>
 
         <SubmitButton pending={isSubmitting} pendingLabel="Creating account…">
           Create account
         </SubmitButton>
-
-        <p className="text-center text-xs text-muted-foreground">
-          By creating an account you agree to our{" "}
-          <Link
-            href="/terms"
-            className="rounded font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            Terms of Use
-          </Link>{" "}
-          and{" "}
-          <a
-            href="https://rateo.ng/privacy-policy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            Privacy Policy
-          </a>
-          .
-        </p>
       </form>
 
-      <SocialSection role="individual" referralCode={referralCode} />
+      <SocialSection role="individual" referralCode={referralCode} termsAccepted={acceptedTerms} />
     </AuthCard>
   );
 }

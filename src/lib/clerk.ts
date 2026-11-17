@@ -58,6 +58,9 @@ export type SsoIntent = {
   role?: 'individual' | 'company';
   companyName?: string;
   next?: string;
+  /** Ticked on the register page before the provider round-trip. */
+  acceptedTerms?: boolean;
+  termsVersion?: string;
 };
 
 /**

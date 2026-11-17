@@ -99,6 +99,10 @@ export type User = {
   isVerified?: boolean;
   setupCompleted?: boolean;
   kycStatus?: KycStatus;
+  /** Terms the user accepted, and the version the server currently requires (gate when they differ). */
+  termsVersion?: string | null;
+  termsAcceptedAt?: string | null;
+  termsCurrentVersion?: string;
   /** Own profile only: Dojah instant check failed / manual review submitted. */
   kycReview?: { autoCheckFailed: boolean; manualSubmitted: boolean; autoVerified?: boolean };
   kyc?: Kyc;

@@ -14,7 +14,7 @@ export const RESTRICTED_PATH = '/account-restricted';
 export type AppealStatus = 'open' | 'upheld' | 'overturned';
 
 export type Enforcement = {
-  status: 'suspended' | 'banned';
+  status: 'suspended' | 'banned' | 'removed';
   reasonLabel?: string;
   userMessage?: string;
   policyUrl?: string;
@@ -48,10 +48,11 @@ export function isRestrictionBody(status: number | undefined, body: unknown): bo
 export function buildRestriction(body: unknown): StoredRestriction {
   const data = isRecord(body) ? body : {};
   const enf = isRecord(data.enforcement) ? data.enforcement : {};
+  const removed = enf.status === 'removed';
   const banned = data.code === 'ACCOUNT_BANNED' || enf.status === 'banned';
   return {
     enforcement: {
-      status: banned ? 'banned' : 'suspended',
+      status: removed ? 'removed' : banned ? 'banned' : 'suspended',
       reasonLabel: typeof enf.reasonLabel === 'string' ? enf.reasonLabel : undefined,
       userMessage: typeof enf.userMessage === 'string' ? enf.userMessage : undefined,
       policyUrl: typeof enf.policyUrl === 'string' ? enf.policyUrl : undefined,

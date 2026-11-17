@@ -113,9 +113,12 @@ export default function AccountRestrictedPage() {
   }
 
   const { enforcement, appealToken } = restriction;
-  const banned = enforcement.status === "banned";
+  const removed = enforcement.status === "removed";
+  const banned = enforcement.status === "banned" || removed;
   const policyUrl = enforcement.policyUrl || DEFAULT_POLICY_URL;
-  const until = banned
+  const until = removed
+    ? "This account can't be used to sign up again"
+    : banned
     ? "This is permanent unless overturned on appeal"
     : enforcement.suspendedUntil
       ? `Suspended until ${formatUntil(enforcement.suspendedUntil)}`
@@ -259,10 +262,16 @@ export default function AccountRestrictedPage() {
             <ShieldAlert className="size-7" />
           </span>
           <h1 className="text-2xl font-bold text-brand-900">
-            {banned ? "Account banned" : "Account suspended"}
+            {removed ? "Account removed" : banned ? "Account banned" : "Account suspended"}
           </h1>
           {enforcement.reasonLabel ? (
             <p className="mt-2 text-base font-semibold text-foreground">{enforcement.reasonLabel}</p>
+          ) : null}
+          {removed ? (
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Your account was removed for breaking our Terms. You can&rsquo;t sign up again with the same
+              email address, phone number or ID. If you believe this is a mistake, you can appeal below.
+            </p>
           ) : null}
           {enforcement.userMessage ? (
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{enforcement.userMessage}</p>

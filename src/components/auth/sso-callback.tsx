@@ -111,11 +111,13 @@ export function SsoCallback() {
         if (!raw) return {};
         const parsed: unknown = JSON.parse(raw);
         if (typeof parsed !== "object" || parsed === null) return {};
-        const { role, companyName, next } = parsed as Record<string, unknown>;
+        const { role, companyName, next, acceptedTerms, termsVersion } = parsed as Record<string, unknown>;
         return {
           role: role === "company" || role === "individual" ? role : undefined,
           companyName: typeof companyName === "string" ? companyName : undefined,
           next: typeof next === "string" ? next : undefined,
+          acceptedTerms: acceptedTerms === true ? true : undefined,
+          termsVersion: typeof termsVersion === "string" ? termsVersion : undefined,
         };
       } catch {
         return {};
@@ -153,6 +155,9 @@ export function SsoCallback() {
           body: JSON.stringify({
             role: intent.role,
             companyName: intent.companyName,
+            ...(intent.acceptedTerms
+              ? { acceptedTerms: true, termsVersion: intent.termsVersion }
+              : {}),
             ...(referralCode
               ? { referralCode, referralSource: REFERRAL_SOURCE_WEB }
               : {}),

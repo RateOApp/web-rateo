@@ -16,12 +16,14 @@ import { PhoneField } from "@/components/auth/phone-field";
 import { ReferralCodeField } from "@/components/auth/referral-code-field";
 import { RoleSwitch } from "@/components/auth/role-switch";
 import { SocialSection } from "@/components/auth/social-section";
+import { TermsCheckbox, TERMS_REQUIRED_MESSAGE } from "@/components/auth/terms-checkbox";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { describedBy, FieldShell, TextField } from "@/components/auth/text-field";
 import { authErrorMessage } from "@/lib/auth-error";
 import { suggestEmailFix } from "@/lib/email-typo";
 import { MAX_REFERRAL_CODE_LENGTH, normaliseReferralCode } from "@/lib/referral-code";
 import { PASSWORDS_DO_NOT_MATCH, passwordSchema } from "@/lib/password";
+import { TERMS_VERSION } from "@/lib/terms";
 import { trackMeta } from "@/lib/meta-pixel";
 import { authService } from "@/services/auth";
 import { REFERRAL_SOURCE_WEB } from "@/types/referrals";
@@ -45,6 +47,7 @@ const schema = z
       .toUpperCase()
       .max(MAX_REFERRAL_CODE_LENGTH, "Referral codes are at most 12 characters.")
       .optional(),
+    acceptedTerms: z.boolean().refine((v) => v === true, { message: TERMS_REQUIRED_MESSAGE }),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: PASSWORDS_DO_NOT_MATCH,
@@ -78,6 +81,7 @@ export function RegisterCompanyForm({
       password: "",
       confirmPassword: "",
       referralCode: initialReferralCode,
+      acceptedTerms: false,
     },
   });
 
@@ -87,6 +91,7 @@ export function RegisterCompanyForm({
   const password = useWatch({ control, name: "password" });
   const companyName = useWatch({ control, name: "companyName" });
   const referralCode = normaliseReferralCode(useWatch({ control, name: "referralCode" }));
+  const acceptedTerms = useWatch({ control, name: "acceptedTerms" }) === true;
 
   async function onSubmit(values: RegisterCompanyValues) {
     setServerError(null);
@@ -99,6 +104,8 @@ export function RegisterCompanyForm({
         email,
         password: values.password,
         phoneNumber: values.phoneNumber,
+        acceptedTerms: true,
+        termsVersion: TERMS_VERSION,
         // An unknown code never fails the signup - the backend skips it and
         // answers `referralApplied: false`.
         ...(code ? { referralCode: code, referralSource: REFERRAL_SOURCE_WEB } : {}),
@@ -231,37 +238,30 @@ export function RegisterCompanyForm({
           {...register("referralCode")}
         />
 
+        <Controller
+          control={control}
+          name="acceptedTerms"
+          render={({ field }) => (
+            <TermsCheckbox
+              checked={field.value === true}
+              onChange={field.onChange}
+              error={errors.acceptedTerms?.message}
+            />
+          )}
+        />
+
         <FormAlert>{serverError}</FormAlert>
 
         <SubmitButton pending={isSubmitting} pendingLabel="Registering…">
           Register company
         </SubmitButton>
-
-        <p className="text-center text-xs text-muted-foreground">
-          By creating an account you agree to our{" "}
-          <Link
-            href="/terms"
-            className="rounded font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            Terms of Use
-          </Link>{" "}
-          and{" "}
-          <a
-            href="https://rateo.ng/privacy-policy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            Privacy Policy
-          </a>
-          .
-        </p>
       </form>
 
       <SocialSection
         role="company"
         companyName={companyName.trim() || undefined}
         referralCode={referralCode}
+        termsAccepted={acceptedTerms}
       />
     </AuthCard>
   );

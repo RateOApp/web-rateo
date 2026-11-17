@@ -29,6 +29,9 @@ export type PendingJobFields = {
   pendingJobs?: { jobId: string; jobType: 'job' | 'imported' }[];
 };
 
+/** Sent on signup once the Terms checkbox is ticked. */
+export type TermsFields = { acceptedTerms?: boolean; termsVersion?: string };
+
 /** A register / social-login response, plus whether a referral was recorded. */
 export type AuthResponseWithReferral = ClientAuthResponse & { referralApplied?: boolean };
 
@@ -37,7 +40,7 @@ export type AuthResponseWithReferral = ClientAuthResponse & { referralApplied?: 
  * either `phone` or `phoneNumber` and stores it as `phone`. Send `''` when the
  * optional number is left blank.
  */
-export type RegisterIndividualPayload = ReferralFields & PendingJobFields & {
+export type RegisterIndividualPayload = ReferralFields & PendingJobFields & TermsFields & {
   role: 'individual';
   firstName: string;
   lastName: string;
@@ -48,7 +51,7 @@ export type RegisterIndividualPayload = ReferralFields & PendingJobFields & {
 };
 
 /** `industry` is optional at register time - the company setup wizard asks for it. */
-export type RegisterCompanyPayload = ReferralFields & {
+export type RegisterCompanyPayload = ReferralFields & TermsFields & {
   role: 'company';
   email: string;
   password: string;

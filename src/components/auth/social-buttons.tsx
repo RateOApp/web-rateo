@@ -14,6 +14,7 @@ import {
   type SsoIntent,
 } from "@/lib/clerk";
 import { storePendingReferralCode } from "@/lib/referral-code";
+import { TERMS_VERSION } from "@/lib/terms";
 
 export type SocialButtonsProps = {
   /** Which kind of account to create if this is a first sign-in. */
@@ -27,6 +28,11 @@ export type SocialButtonsProps = {
    * `sessionStorage` before leaving and picked up by `/sso-callback`.
    */
   referralCode?: string;
+  /**
+   * Register pages only: the buttons stay disabled until the Terms checkbox is
+   * ticked. Leave undefined on login pages (no gate).
+   */
+  termsAccepted?: boolean;
 };
 
 type Provider = {
@@ -66,18 +72,31 @@ export function SocialButtons(props: SocialButtonsProps) {
   return <ClerkSocialButtons {...props} />;
 }
 
-function ClerkSocialButtons({ role, companyName, next, referralCode }: SocialButtonsProps) {
+function ClerkSocialButtons({
+  role,
+  companyName,
+  next,
+  referralCode,
+  termsAccepted,
+}: SocialButtonsProps) {
+  const gated = termsAccepted === false;
   const { signIn } = useSignIn();
   const [pending, setPending] = useState<OAuthStrategy | null>(null);
 
   async function start(strategy: OAuthStrategy) {
+    if (gated) return;
     setPending(strategy);
 
     // The provider round-trip loses React state, so the intent rides in
     // sessionStorage and `/sso-callback` picks it back up. The referral code
     // gets its own key, shared with the mobile app's naming.
     storePendingReferralCode(referralCode);
-    const intent: SsoIntent = { role, companyName, next };
+    const intent: SsoIntent = {
+      role,
+      companyName,
+      next,
+      ...(termsAccepted ? { acceptedTerms: true, termsVersion: TERMS_VERSION } : {}),
+    };
     try {
       window.sessionStorage.setItem(SSO_STORAGE_KEY, JSON.stringify(intent));
     } catch {
@@ -103,13 +122,18 @@ function ClerkSocialButtons({ role, companyName, next, referralCode }: SocialBut
 
   return (
     <div className="flex flex-col gap-2.5">
+      {gated ? (
+        <p className="text-center text-xs text-muted-foreground">
+          Tick the Terms checkbox above to sign up with Google, Apple or LinkedIn.
+        </p>
+      ) : null}
       {PROVIDERS.map((provider) => (
         <Button
           key={provider.strategy}
           type="button"
           variant="outline"
           className="h-11 w-full justify-center gap-2.5 text-sm font-medium text-brand-900"
-          disabled={pending !== null}
+          disabled={pending !== null || gated}
           onClick={() => void start(provider.strategy)}
         >
           {pending === provider.strategy ? (
