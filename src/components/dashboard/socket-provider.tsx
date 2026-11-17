@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -12,17 +11,16 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AccountSuspendedDialog } from "@/components/messages/account-suspended-dialog";
 import { useMe } from "@/hooks/use-me";
 import { NOTIFICATIONS_KEY } from "@/hooks/use-notifications";
 import { MY_INTERESTS_KEY } from "@/hooks/use-my-interests";
 import { SAVED_JOBS_KEY } from "@/hooks/use-saved-jobs";
 import { CONVERSATIONS_KEY, UNREAD_MESSAGES_KEY } from "@/hooks/use-messages";
 import { connectSocket, disconnectSocket, type AppSocket } from "@/lib/socket";
-import { authService } from "@/services/auth";
 import { messagesService } from "@/services/messages";
 import { messageUserName, refId, refUser, type Conversation } from "@/types/messages";
-import type { ServerToClientEvents } from "@/types/socket";
+import { handleRestriction } from "@/lib/account-restriction";
+import type { AccountStatusChangedPayload, ServerToClientEvents } from "@/types/socket";
 
 type SocketContextValue = {
   socket: AppSocket | null;
@@ -100,8 +98,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const [socket, setSocket] = useState<AppSocket | null>(null);
   const [connected, setConnected] = useState(false);
-  const [suspended, setSuspended] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
 
   // The thread currently on screen, read inside listeners without making them
   // depend on the pathname (which would re-subscribe on every navigation).
@@ -145,31 +141,24 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<SocketContextValue>(() => ({ socket, connected }), [socket, connected]);
 
-  const handleLogout = useCallback(() => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    void authService.logout().finally(() => {
-      disconnectSocket();
-      // A hard navigation is deliberate: the session is gone, and a full
-      // document load is the only way to drop every cached RSC payload and
-      // in-memory query result belonging to the suspended account.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/login");
-    });
-  }, [loggingOut]);
-
   return (
     <SocketContext.Provider value={value}>
       <GlobalSocketListeners
         userId={userId}
         pathnameRef={pathnameRef}
-        onSuspended={() => setSuspended(true)}
+        onSuspended={(payload) => {
+          // Store the notice, drop the session, show /account-restricted.
+          disconnectSocket();
+          handleRestriction({
+            code: payload.enforcement?.status === "banned" ? "ACCOUNT_BANNED" : "ACCOUNT_SUSPENDED",
+            enforcement: payload.enforcement,
+          });
+        }}
         invalidate={(key) => void queryClient.invalidateQueries({ queryKey: key })}
         refresh={() => router.refresh()}
         navigate={(href) => router.push(href)}
       />
       {children}
-      <AccountSuspendedDialog open={suspended} busy={loggingOut} onLogout={handleLogout} />
     </SocketContext.Provider>
   );
 }
@@ -188,7 +177,7 @@ function GlobalSocketListeners({
 }: {
   userId: string | null;
   pathnameRef: React.RefObject<string>;
-  onSuspended: () => void;
+  onSuspended: (payload: AccountStatusChangedPayload) => void;
   invalidate: (key: readonly unknown[]) => void;
   refresh: () => void;
   navigate: (href: string) => void;
@@ -291,7 +280,7 @@ function GlobalSocketListeners({
   useSocketEvent("account_status_changed", (payload) => {
     if (payload.isActive !== false) return;
     if (userId && String(payload.userId) !== userId) return;
-    onSuspended();
+    onSuspended(payload);
   });
 
   useSocketEvent("user_blocked", (payload) => {

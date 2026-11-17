@@ -2,6 +2,7 @@
 
 import axios, { type AxiosError } from 'axios';
 
+import { handleRestriction, isRestrictionBody } from '@/lib/account-restriction';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
 export { getApiErrorMessage };
@@ -58,6 +59,13 @@ api.interceptors.response.use(
       typeof window !== 'undefined'
     ) {
       window.dispatchEvent(new CustomEvent(PARTICIPATION_OVERDUE_EVENT));
+    }
+
+    // Suspended / banned account (login or any authenticated call): keep the
+    // notice, drop the session, and show the restricted page instead of an error.
+    if (isRestrictionBody(error.response?.status, data)) {
+      handleRestriction(data);
+      return Promise.reject(error);
     }
 
     if (error.response?.status === 401 && !AUTH_ENDPOINTS.test(requestPath(error))) {

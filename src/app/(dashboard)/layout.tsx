@@ -5,6 +5,7 @@ import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { DashboardProviders } from "@/components/dashboard/dashboard-providers";
 import { UserProvider } from "@/providers/user-provider";
 import { getCachedUser } from "@/lib/current-user";
+import { getDeadSessionReason } from "@/lib/api/server";
 import { getImpersonation } from "@/lib/session";
 
 export default async function DashboardLayout({
@@ -13,7 +14,13 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await getCachedUser();
-  if (!user) redirect("/login");
+  if (!user) {
+    // A dead cookie must be cleared before /login, or proxy.ts bounces back here.
+    const reason = await getDeadSessionReason();
+    if (reason === "restricted") redirect("/api/auth/logout?reason=restricted");
+    if (reason === "invalid") redirect("/api/auth/logout");
+    redirect("/login");
+  }
   if (user.setupCompleted === false) redirect("/setup");
   const impersonation = await getImpersonation();
 

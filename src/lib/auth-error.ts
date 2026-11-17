@@ -17,6 +17,13 @@ export function errorStatus(err: unknown): number | undefined {
   return undefined;
 }
 
+/** Parsed response body behind an axios error or an `ApiError`, when there is one. */
+export function responseBody(err: unknown): unknown {
+  if (err instanceof ApiError) return err.body;
+  if (isRecord(err) && isRecord(err.response)) return err.response.data;
+  return undefined;
+}
+
 /**
  * Message for an auth form. Same as `getApiErrorMessage`, except the rate
  * limiter answers with an unhelpful body, so 429 gets its own copy.

@@ -94,6 +94,27 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
+/**
+ * Why getCurrentUser() returned null while a token cookie exists:
+ * 'restricted' (suspended/banned), 'invalid' (expired/bad token), or null when
+ * there is no cookie at all. Only called on the dashboard's signed-out path.
+ */
+export async function getDeadSessionReason(): Promise<'restricted' | 'invalid' | null> {
+  const token = (await cookies()).get(COOKIE_TOKEN)?.value;
+  if (!token) return null;
+  try {
+    await serverFetch<{ valid: boolean }>('auth/verify-token');
+    return 'invalid';
+  } catch (err) {
+    if (err instanceof ApiError) {
+      const code = err.code ?? (err.body as { code?: string } | undefined)?.code;
+      if (code === 'ACCOUNT_SUSPENDED' || code === 'ACCOUNT_BANNED') return 'restricted';
+      if (err.status === 403 && /account suspended/i.test(err.message)) return 'restricted';
+    }
+    return 'invalid';
+  }
+}
+
 /** Absolute URL on this app's own origin, for metadata / sitemap / redirects. */
 export function absoluteUrl(path = ''): string {
   const base = getAppUrl();

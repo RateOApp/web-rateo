@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -76,7 +76,15 @@ export async function POST(req: NextRequest): Promise<Response> {
   const scalooCookie = req.cookies.get(SCALOO_COOKIE)?.value;
   const scalooRef = isValidScalooRef(scalooCookie) ? scalooCookie : undefined;
 
+  // The backend verifies this Clerk session itself and takes the email from
+  // Clerk — the email below is informational only (see server clerkVerify).
+  const clerkToken = await (await auth()).getToken();
+  if (!clerkToken) {
+    return NextResponse.json({ message: 'Not signed in with a social provider' }, { status: 401 });
+  }
+
   const payload = {
+    clerkToken,
     email,
     firstName,
     lastName,
@@ -111,6 +119,25 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   if (!upstream.ok) {
+    // Suspended / banned: forward the notice + appeal token so the client can
+    // show /account-restricted. SIGNUP_BLOCKED keeps its code too.
+    if (
+      isRecord(body) &&
+      upstream.status === 403 &&
+      (body.code === 'ACCOUNT_SUSPENDED' ||
+        body.code === 'ACCOUNT_BANNED' ||
+        body.code === 'SIGNUP_BLOCKED')
+    ) {
+      return NextResponse.json(
+        {
+          message: messageFromBody(body) ?? 'Social login failed',
+          code: body.code,
+          enforcement: body.enforcement,
+          appealToken: body.appealToken,
+        },
+        { status: 403 },
+      );
+    }
     return NextResponse.json(
       { message: messageFromBody(body) ?? 'Social login failed' },
       { status: upstream.status },

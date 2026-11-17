@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { AuthCard } from "@/components/auth/auth-card";
+import { handleRestriction, isRestrictionBody } from "@/lib/account-restriction";
 import { clerkErrorMessage, safeNextPath, SSO_STORAGE_KEY, type SsoIntent } from "@/lib/clerk";
 import { trackMeta } from "@/lib/meta-pixel";
 import { clearPendingReferralCode, readPendingReferralCode } from "@/lib/referral-code";
@@ -170,6 +171,15 @@ export function SsoCallback() {
       }
 
       if (!res.ok) {
+        if (isRestrictionBody(res.status, body)) {
+          try {
+            await clerk.signOut();
+          } catch {
+            // ignore - we are leaving anyway
+          }
+          handleRestriction(body);
+          return;
+        }
         const message =
           typeof body === "object" &&
           body !== null &&

@@ -111,6 +111,12 @@ export async function proxyRequest(
 
   const token = req.cookies.get(COOKIE_TOKEN)?.value;
   if (token) headers.set('authorization', `Bearer ${token}`);
+  else if (path === 'appeals' || path === 'appeals/me') {
+    // A suspended/banned user has no session cookie; the appeal endpoints take
+    // a short-lived appeal token the page sends explicitly.
+    const appealAuth = req.headers.get('authorization');
+    if (appealAuth) headers.set('authorization', appealAuth);
+  }
 
   const forwardedFor =
     req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? undefined;

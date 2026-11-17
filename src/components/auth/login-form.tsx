@@ -12,7 +12,8 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { SocialSection } from "@/components/auth/social-section";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { describedBy, FieldShell, TextField } from "@/components/auth/text-field";
-import { authErrorMessage } from "@/lib/auth-error";
+import { isRestrictionBody } from "@/lib/account-restriction";
+import { authErrorMessage, errorStatus, responseBody } from "@/lib/auth-error";
 import { safeNextPath } from "@/lib/clerk";
 import { hardNavigate } from "@/lib/navigate";
 import { authService } from "@/services/auth";
@@ -55,6 +56,9 @@ export function LoginForm({ next }: { next?: string }) {
         user.setupCompleted === false ? "/setup" : (safeNextPath(next) ?? "/dashboard");
       hardNavigate(target);
     } catch (err) {
+      // Suspended/banned: the API client is already sending the user to
+      // /account-restricted - don't flash an error under the form.
+      if (isRestrictionBody(errorStatus(err), responseBody(err))) return;
       setServerError(authErrorMessage(err, "Could not log you in. Please try again."));
     }
   }

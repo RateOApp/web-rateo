@@ -50,6 +50,16 @@ export type AccountStatusChangedPayload = {
   userId: string;
   isActive: boolean;
   reason?: string;
+  /** Present when suspended/banned; no appeal token (the page asks to log in again). */
+  enforcement?: {
+    status?: 'suspended' | 'banned';
+    reasonLabel?: string;
+    userMessage?: string;
+    policyUrl?: string;
+    suspendedUntil?: string | null;
+    appealAllowed?: boolean;
+    appealStatus?: 'open' | 'upheld' | 'overturned' | null;
+  };
 };
 
 /** A KYC decision landed for this account. */
