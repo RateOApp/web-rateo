@@ -83,6 +83,8 @@ export function TalentActions({
       router.back();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Failed to reject applicant"));
+      // e.g. 409 "This candidate withdrew their application" - refresh the list.
+      void queryClient.invalidateQueries({ queryKey: ["jobApplicants", jobId] });
     } finally {
       setBusy(false);
     }

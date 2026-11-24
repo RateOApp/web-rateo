@@ -21,6 +21,7 @@ import {
   applicationLabel,
   applicationTone,
   isApplicationRemovable,
+  isApplicationWithdrawable,
 } from "@/types/dashboard";
 import type { JobApplication } from "@/types/api";
 
@@ -33,23 +34,37 @@ const TONE_CLASSES = {
 export function ApplicationsList() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useAppliedJobs();
-  const [target, setTarget] = useState<JobApplication | null>(null);
+  // "clear" = drop a finalized card from my list; "withdraw" = pull an
+  // undecided application (the company stops seeing it).
+  const [target, setTarget] = useState<{
+    application: JobApplication;
+    mode: "clear" | "withdraw";
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const applications = data ?? [];
 
-  async function handleRemove() {
+  async function handleConfirm() {
     if (!target || busy) return;
+    const { application, mode } = target;
     setBusy(true);
     try {
-      await jobsService.withdraw(target.job._id);
+      if (mode === "withdraw") {
+        await jobsService.withdrawApplication(application.job._id);
+      } else {
+        await jobsService.clearApplication(application.job._id);
+      }
       queryClient.setQueryData<JobApplication[]>(APPLIED_JOBS_KEY, (old) =>
-        Array.isArray(old) ? old.filter((entry) => entry._id !== target._id) : old,
+        Array.isArray(old) ? old.filter((entry) => entry._id !== application._id) : old,
       );
       setTarget(null);
-      toast.success("Application removed");
+      toast.success(mode === "withdraw" ? "Application withdrawn" : "Application removed");
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Could not remove"));
+      toast.error(
+        getApiErrorMessage(error, mode === "withdraw" ? "Could not withdraw" : "Could not remove"),
+      );
+      // The status may have changed under us (e.g. accepted meanwhile).
+      void queryClient.invalidateQueries({ queryKey: APPLIED_JOBS_KEY });
     } finally {
       setBusy(false);
     }
@@ -79,6 +94,7 @@ export function ApplicationsList() {
           const job = application.job;
           const tone = applicationTone(application.status);
           const removable = isApplicationRemovable(application.status);
+          const withdrawable = isApplicationWithdrawable(application.status);
           const salary = formatSalaryRange(job.minSalary, job.maxSalary);
 
           return (
@@ -127,9 +143,19 @@ export function ApplicationsList() {
                     variant="ghost"
                     size="icon"
                     aria-label={`Remove application for ${job.title?.trim() || "this role"}`}
-                    onClick={() => setTarget(application)}
+                    onClick={() => setTarget({ application, mode: "clear" })}
                   >
                     <Trash2 aria-hidden="true" className="size-4" />
+                  </Button>
+                ) : null}
+                {withdrawable ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label={`Withdraw application for ${job.title?.trim() || "this role"}`}
+                    onClick={() => setTarget({ application, mode: "withdraw" })}
+                  >
+                    Withdraw
                   </Button>
                 ) : null}
               </div>
@@ -138,12 +164,24 @@ export function ApplicationsList() {
         })}
       </ul>
 
-      <RemoveDialog
-        open={target !== null}
-        busy={busy}
-        onOpenChange={(next) => (next ? null : setTarget(null))}
-        onConfirm={() => void handleRemove()}
-      />
+      {target?.mode === "withdraw" ? (
+        <RemoveDialog
+          open
+          busy={busy}
+          title="Withdraw your application?"
+          description="The employer will no longer see your application. You can apply again later."
+          confirmLabel="Withdraw"
+          onOpenChange={(next) => (next ? null : setTarget(null))}
+          onConfirm={() => void handleConfirm()}
+        />
+      ) : (
+        <RemoveDialog
+          open={target !== null}
+          busy={busy}
+          onOpenChange={(next) => (next ? null : setTarget(null))}
+          onConfirm={() => void handleConfirm()}
+        />
+      )}
     </>
   );
 }

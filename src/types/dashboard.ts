@@ -34,6 +34,13 @@ export function isApplicationRemovable(status: JobApplicantStatus | undefined): 
   return REMOVABLE_STATUSES.includes(String(status ?? '').toLowerCase());
 }
 
+/** Undecided applications the candidate may still withdraw (server mirrors this). */
+const WITHDRAWABLE_STATUSES = ['interested', 'pending', 'reviewed'];
+
+export function isApplicationWithdrawable(status: JobApplicantStatus | undefined): boolean {
+  return WITHDRAWABLE_STATUSES.includes(String(status ?? '').toLowerCase());
+}
+
 /** "pending" -> "Pending"; missing status -> "Received" (mirrors mobile). */
 export function applicationLabel(status: JobApplicantStatus | undefined): string {
   const value = String(status ?? '').trim() || 'Received';

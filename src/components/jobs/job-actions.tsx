@@ -25,7 +25,8 @@ import { addPendingJob } from "@/lib/job-intent";
 import type { Role } from "@/lib/session";
 import { trackMeta } from "@/lib/meta-pixel";
 import { jobsService } from "@/services/jobs";
-import { isImportedJob, type AnyJob } from "@/types/api";
+import { isImportedJob, type AnyJob, type JobApplication } from "@/types/api";
+import { isApplicationWithdrawable } from "@/types/dashboard";
 
 type Viewer = { authenticated: boolean; role: Role | null };
 
@@ -69,13 +70,15 @@ export function JobActions({
   const appliedJobs = useAppliedJobs(isIndividual);
   const myInterests = useMyInterests(isIndividual);
 
-  const [appliedLocal, setAppliedLocal] = useState(false);
+  // `null` = trust the server/cache; true/false = a local apply/withdraw.
+  const [appliedOverride, setAppliedOverride] = useState<boolean | null>(null);
   const [savedLocal, setSavedLocal] = useState(false);
   // `null` = "no local decision yet, trust the server"; the public page never
   // gets `hasRegisteredInterest`, so the my-interests list answers there.
   const [interestOverride, setInterestOverride] = useState<boolean | null>(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [pending, setPending] = useState<"apply" | "save" | "interest" | null>(null);
+  const [withdrawApplicationOpen, setWithdrawApplicationOpen] = useState(false);
+  const [pending, setPending] = useState<"apply" | "save" | "interest" | "withdraw" | null>(null);
 
   const imported = isImportedJob(job);
   const expired = isDeadlinePast(job.deadline);
@@ -83,10 +86,13 @@ export function JobActions({
   const shut = closed || expired;
   const shutReason = closed ? "This role has been closed" : "The deadline has passed";
 
-  const applied =
-    initialApplied ||
-    appliedLocal ||
-    Boolean(appliedJobs.data?.some((entry) => entry.job?._id === job._id));
+  const appliedEntry = appliedJobs.data?.find((entry) => entry.job?._id === job._id);
+  const applied = appliedOverride ?? (initialApplied || Boolean(appliedEntry));
+  // Withdrawable only before a decision. A fresh local apply is 'pending' until
+  // the applied-jobs cache catches up.
+  const canWithdrawApplication =
+    applied &&
+    (appliedEntry ? isApplicationWithdrawable(appliedEntry.status) : appliedOverride === true);
   const saved =
     initialSaved || savedLocal || Boolean(savedJobs.data?.some((entry) => entry._id === job._id));
   const interested =
@@ -116,7 +122,7 @@ export function JobActions({
   );
 
   async function run<T>(
-    kind: "apply" | "save" | "interest",
+    kind: "apply" | "save" | "interest" | "withdraw",
     action: () => Promise<T>,
     onSuccess: (result: T) => void,
   ) {
@@ -138,7 +144,7 @@ export function JobActions({
           .catch(() => {});
       } else if (status === 400 && /already/i.test(message)) {
         // "You have already applied for this job" / "already saved".
-        if (kind === "apply") setAppliedLocal(true);
+        if (kind === "apply") setAppliedOverride(true);
         if (kind === "save") setSavedLocal(true);
         toast.info(message);
       } else if (status !== 403 || !/participation/i.test(message)) {
@@ -208,7 +214,7 @@ export function JobActions({
       () => jobsService.apply(job._id),
       () => {
         trackMeta("SubmitApplication");
-        setAppliedLocal(true);
+        setAppliedOverride(true);
         void queryClient.invalidateQueries({ queryKey: APPLIED_JOBS_KEY });
         toast.success("Application submitted");
       },
@@ -261,6 +267,26 @@ export function JobActions({
     );
   }
 
+  /** Like interest, withdrawing an application is never KYC/participation-gated. */
+  function handleWithdrawApplication() {
+    setWithdrawApplicationOpen(false);
+
+    void run(
+      "withdraw",
+      () => jobsService.withdrawApplication(job._id),
+      () => {
+        setAppliedOverride(false);
+        queryClient.setQueryData<JobApplication[]>(APPLIED_JOBS_KEY, (old) =>
+          Array.isArray(old) ? old.filter((entry) => entry.job?._id !== job._id) : old,
+        );
+        void queryClient.invalidateQueries({ queryKey: APPLIED_JOBS_KEY });
+        toast.success("Application withdrawn", {
+          description: "You can apply again any time while the role is open.",
+        });
+      },
+    );
+  }
+
   /** Withdrawing is never participation-locked - only registering is. */
   function handleWithdrawInterest() {
     setWithdrawOpen(false);
@@ -299,19 +325,37 @@ export function JobActions({
         ) : (
           <>
             <div className="flex items-center gap-2">
-              <Button
-                size="lg"
-                className="h-11 flex-1 bg-brand-700 text-white"
-                disabled={applied || shut || pending !== null}
-                onClick={handleApply}
-              >
-                {pending === "apply" ? (
-                  <Loader2 aria-hidden="true" className="animate-spin" />
-                ) : applied ? (
-                  <Check aria-hidden="true" />
-                ) : null}
-                {shut ? "Application Closed" : applied ? "Applied" : "Apply now"}
-              </Button>
+              {canWithdrawApplication ? (
+                // Withdrawing stays possible even after the role closes.
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-11 flex-1"
+                  disabled={pending !== null}
+                  onClick={() => setWithdrawApplicationOpen(true)}
+                >
+                  {pending === "withdraw" ? (
+                    <Loader2 aria-hidden="true" className="animate-spin" />
+                  ) : (
+                    <Check aria-hidden="true" />
+                  )}
+                  Applied ✓ · Withdraw
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="h-11 flex-1 bg-brand-700 text-white"
+                  disabled={applied || shut || pending !== null}
+                  onClick={handleApply}
+                >
+                  {pending === "apply" ? (
+                    <Loader2 aria-hidden="true" className="animate-spin" />
+                  ) : applied ? (
+                    <Check aria-hidden="true" />
+                  ) : null}
+                  {shut ? "Application Closed" : applied ? "Applied" : "Apply now"}
+                </Button>
+              )}
               <JobMenu jobId={job._id} />
             </div>
 
@@ -345,6 +389,18 @@ export function JobActions({
 
         {shareRow}
       </div>
+
+      {imported ? null : (
+        <RemoveDialog
+          open={withdrawApplicationOpen}
+          busy={pending === "withdraw"}
+          title="Withdraw your application?"
+          description="The employer will no longer see your application. You can apply again later."
+          confirmLabel="Withdraw"
+          onOpenChange={(next) => (next ? null : setWithdrawApplicationOpen(false))}
+          onConfirm={handleWithdrawApplication}
+        />
+      )}
 
       {imported ? (
         <RemoveDialog

@@ -240,6 +240,7 @@ export type JobApplicantStatus =
   | 'shortlisted'
   | 'accepted'
   | 'rejected'
+  | 'withdrawn'
   | (string & {});
 
 export type JobApplicant = {

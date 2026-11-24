@@ -66,7 +66,17 @@ export const jobsService = {
     return api.post<ApiMessage>(`/jobs/${id}/apply`).then((r) => r.data);
   },
 
-  withdraw(id: string): Promise<ApiMessage> {
+  /**
+   * Withdraw an undecided (pending/reviewed) application. Silent for the
+   * company - the candidate just leaves its applicant list. Re-applying later
+   * is allowed.
+   */
+  withdrawApplication(id: string): Promise<ApiMessage> {
+    return api.post<ApiMessage>(`/jobs/${id}/apply/withdraw`).then((r) => r.data);
+  },
+
+  /** Clear a finalized (accepted/rejected) card from MY Applications list only. */
+  clearApplication(id: string): Promise<ApiMessage> {
     return api.delete<ApiMessage>(`/jobs/${id}/apply`).then((r) => r.data);
   },
 
