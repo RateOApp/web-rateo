@@ -242,17 +242,34 @@ export function TalentDetail({
         <MetricsBars rows={metrics} />
       </section>
 
-      {skills.length ? (
-        <ul className="flex flex-wrap gap-2">
-          {skills.map((skill) => (
-            <li key={skill} className="min-w-0 max-w-full">
-              <Badge variant="secondary" className="max-w-full" title={skill}>
-                <span className="block min-w-0 truncate">{skill}</span>
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {/* ---- skills ------------------------------------------------------ */}
+      <section aria-labelledby="talent-skills-heading">
+        <h2 id="talent-skills-heading" className="mb-3 text-lg font-bold text-brand-900">
+          Skills
+          {skills.length ? (
+            <span className="ml-2 text-sm font-medium text-muted-foreground">({skills.length})</span>
+          ) : null}
+        </h2>
+        <div className="rounded-2xl border border-border bg-white p-4 sm:p-6">
+          {skills.length ? (
+            <ul className="flex flex-wrap gap-2">
+              {skills.map((skill) => (
+                <li key={skill} className="min-w-0 max-w-full">
+                  <Badge
+                    variant="secondary"
+                    className="h-auto max-w-full px-3 py-1 text-sm"
+                    title={skill}
+                  >
+                    <span className="block min-w-0 truncate">{skill}</span>
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No skills listed yet.</p>
+          )}
+        </div>
+      </section>
 
       <TalentActions
         candidateId={candidateId}

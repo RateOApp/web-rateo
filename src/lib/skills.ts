@@ -9,8 +9,29 @@
 export const MAX_SKILL_LENGTH = 40;
 export const MAX_SKILLS = 20;
 
-// "/" and "&" do NOT split ("UI/UX", "Sales & Marketing" are single skills).
+// "/" and "&" do NOT split ("UI/UX", "Sales & Marketing" are single skills), and
+// nothing inside brackets does ("HRIS (e.g. Workday, BambooHR)" stays one skill).
 const SEPARATORS = /[\n\r,;|•·●▪◦‣∙]+/;
+const SEPARATOR_CHAR = /[\n\r,;|•·●▪◦‣∙]/;
+
+/** Split on separators that are outside (), [] and {}. */
+function splitOutsideBrackets(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of text) {
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if ((ch === ')' || ch === ']' || ch === '}') && depth > 0) depth -= 1;
+    if (depth === 0 && SEPARATOR_CHAR.test(ch)) {
+      parts.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  parts.push(current);
+  return parts;
+}
 
 export function cleanSkill(raw: string): string {
   return raw
@@ -22,7 +43,14 @@ export function cleanSkill(raw: string): string {
 }
 
 export function splitSkillText(text: string): string[] {
-  return text.split(SEPARATORS).map(cleanSkill).filter(Boolean);
+  return (
+    splitOutsideBrackets(text)
+      // An unclosed bracket can swallow the rest of a pasted list; if a piece is
+      // still over the limit, fall back to splitting it on every separator.
+      .flatMap((part) => (cleanSkill(part).length > MAX_SKILL_LENGTH ? part.split(SEPARATORS) : [part]))
+      .map(cleanSkill)
+      .filter(Boolean)
+  );
 }
 
 export type AddSkillsResult = { skills: string[]; error?: string };
