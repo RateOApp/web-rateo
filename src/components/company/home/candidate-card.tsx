@@ -5,6 +5,7 @@ import { ChevronRight, Heart, Loader2, X } from "lucide-react";
 import { StarRating } from "@/components/shared/star-rating";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
+import { splitSkillList } from "@/lib/skills";
 import { cn } from "@/lib/utils";
 import {
   candidateName,
@@ -41,7 +42,8 @@ export function CandidateCard({
 }: CandidateCardProps) {
   const name = candidateName(candidate);
   const rating = candidateRating(candidate);
-  const skills = (candidate.skills ?? []).filter((skill) => Boolean(skill?.trim()));
+  // Split legacy pasted lists ("• A • B") into separate chips.
+  const skills = splitSkillList(candidate.skills);
   const shown = skills.slice(0, MAX_SKILLS);
   const extra = skills.length - shown.length;
 
@@ -84,9 +86,10 @@ export function CandidateCard({
           {shown.length ? (
             <>
               {shown.map((skill) => (
-                <li key={skill}>
-                  <Badge variant="secondary" className="max-w-full truncate">
-                    {skill}
+                <li key={skill} className="min-w-0 max-w-full">
+                  {/* Badge is inline-flex, so the ellipsis lives on an inner block span. */}
+                  <Badge variant="secondary" className="max-w-full" title={skill}>
+                    <span className="block min-w-0 truncate">{skill}</span>
                   </Badge>
                 </li>
               ))}

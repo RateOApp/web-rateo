@@ -12,6 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import {
+  addSkillsFromText,
+  MAX_SKILL_LENGTH,
+  MAX_SKILLS,
+  splitSkillList,
+  splitSkillText,
+} from '@/lib/skills';
 import { usersService } from '@/services/users';
 import type { User } from '@/types/api';
 
@@ -36,15 +43,27 @@ export function SkillsEditor({ user }: { user: User }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [skills, setSkills] = useState<string[]>(user.skills ?? []);
+  const [skills, setSkills] = useState<string[]>(() => splitSkillList(user.skills));
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [addError, setAddError] = useState<string | null>(null);
+
+  // A single entry over the cap; a comma-separated list may be longer overall.
+  const longestDraftSkill = Math.max(0, ...splitSkillText(draft).map((skill) => skill.length));
+  const draftOverLimit = longestDraftSkill > MAX_SKILL_LENGTH;
+  const atCap = skills.length >= MAX_SKILLS;
+
   function addSkill() {
-    const value = draft.trim();
-    if (!value) return;
-    setSkills((current) => [...current, value]);
+    if (!draft.trim()) return;
+    const result = addSkillsFromText(skills, draft);
+    if (result.error) {
+      setAddError(result.error);
+      return;
+    }
+    setSkills(result.skills);
+    setAddError(null);
     setDraft('');
   }
 
@@ -75,9 +94,14 @@ export function SkillsEditor({ user }: { user: User }) {
           <Input
             id="new-skill"
             value={draft}
-            placeholder="e.g. React Native"
-            disabled={saving}
-            onChange={(event) => setDraft(event.target.value)}
+            placeholder={atCap ? `Maximum of ${MAX_SKILLS} skills reached` : 'e.g. Payroll'}
+            disabled={saving || atCap}
+            aria-describedby="new-skill-hint"
+            aria-invalid={draftOverLimit || undefined}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              if (addError) setAddError(null);
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
                 event.preventDefault();
@@ -89,11 +113,29 @@ export function SkillsEditor({ user }: { user: User }) {
           <Button
             type="button"
             className="h-11 shrink-0 bg-brand-700 px-5 text-white"
-            disabled={!draft.trim() || saving}
+            disabled={!draft.trim() || draftOverLimit || saving || atCap}
             onClick={addSkill}
           >
             Add
           </Button>
+        </div>
+        <div className="flex items-start justify-between gap-3 text-xs">
+          <p
+            id="new-skill-hint"
+            className={addError || draftOverLimit ? 'text-destructive' : 'text-muted-foreground'}
+          >
+            {addError ??
+              (draftOverLimit
+                ? `Keep each skill under ${MAX_SKILL_LENGTH} characters. Separate several skills with commas.`
+                : 'One skill at a time, e.g. “Payroll”. Separate several with commas.')}
+          </p>
+          <span
+            className={`shrink-0 tabular-nums ${draftOverLimit ? 'text-destructive' : 'text-muted-foreground'}`}
+          >
+            {draft.trim()
+              ? `${longestDraftSkill}/${MAX_SKILL_LENGTH}`
+              : `${skills.length}/${MAX_SKILLS} skills`}
+          </span>
         </div>
       </div>
 

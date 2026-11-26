@@ -25,6 +25,7 @@ import { SAVED_CANDIDATES_KEY, useSavedCandidates } from "@/hooks/use-saved-cand
 import { getApiErrorMessage } from "@/lib/api/client";
 import { INDIVIDUAL_CRITERIA } from "@/lib/rating-criteria";
 import { formatRating, hasRating } from "@/lib/rating";
+import { splitSkillList } from "@/lib/skills";
 import { cn } from "@/lib/utils";
 import { candidatesService } from "@/services/candidates";
 import { usersService } from "@/services/users";
@@ -120,7 +121,7 @@ export function TalentDetail({
   const reviewsAverage =
     reviews.data && reviews.data.totalReviews > 0 ? reviews.data.averageRating : null;
   const rating = hasRating(profileRating) ? profileRating : reviewsAverage;
-  const skills = (candidate?.skills ?? []).filter((skill) => Boolean(skill?.trim()));
+  const skills = splitSkillList(candidate?.skills);
 
   async function handleSaveToggle() {
     if (savePending) return;
@@ -244,8 +245,10 @@ export function TalentDetail({
       {skills.length ? (
         <ul className="flex flex-wrap gap-2">
           {skills.map((skill) => (
-            <li key={skill}>
-              <Badge variant="secondary">{skill}</Badge>
+            <li key={skill} className="min-w-0 max-w-full">
+              <Badge variant="secondary" className="max-w-full" title={skill}>
+                <span className="block min-w-0 truncate">{skill}</span>
+              </Badge>
             </li>
           ))}
         </ul>

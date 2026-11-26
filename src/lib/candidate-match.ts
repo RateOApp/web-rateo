@@ -1,3 +1,4 @@
+import { splitSkillList } from '@/lib/skills';
 import { candidateTitle, type Candidate, type CandidatePreferences } from '@/types/candidates';
 
 /**
@@ -30,7 +31,8 @@ export function computeCandidateMatch(
   let score = 0;
 
   // Skills vs preferred roles/skills (40%).
-  const candidateSkills = lower(candidate.skills);
+  // Legacy pasted lists are split so each skill can match on its own.
+  const candidateSkills = lower(splitSkillList(candidate.skills));
   const preferredRoles = lower(preferences.roles);
   if (candidateSkills.length > 0 && preferredRoles.length > 0) {
     const overlap = candidateSkills.filter((skill) => preferredRoles.includes(skill));
