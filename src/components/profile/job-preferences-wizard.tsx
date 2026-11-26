@@ -27,11 +27,31 @@ const DEFAULT_MIN_RATING = 3;
  * `category` string into a one-item array - the same back-compat fold the
  * server does, so an old account keeps its existing pick.
  */
+const INDUSTRY_BY_LOWER = new Map<string, string>([
+  ...(INDUSTRIES as readonly string[]).map((industry): [string, string] => [industry.toLowerCase(), industry]),
+  // Old ids saved by the first app release, before the INDUSTRIES list.
+  // Mirrors LEGACY_INDUSTRY_ALIASES in app-rateo/server-rateo utils/industry.
+  ["design", "Creative Arts & Design"],
+  ["finance", "Banking & Financial Services"],
+  ["education", "Education & Training"],
+  ["it", "Information Technology & Software"],
+  ["restaurant", "Food & Beverage"],
+  ["health", "Healthcare & Pharmaceuticals"],
+]);
+
+/**
+ * Saved values that are not a canonical industry (pre-list names like "Tech")
+ * are dropped: otherwise they count toward the 3-limit while no card shows
+ * them as selected.
+ */
 function seedCategories(user: User): string[] {
   const saved = user.jobPreferences?.categories;
-  if (Array.isArray(saved) && saved.length > 0) return saved;
   const legacy = (user.jobPreferences as { category?: string } | undefined)?.category;
-  return legacy ? [legacy] : [];
+  const raw = Array.isArray(saved) && saved.length > 0 ? saved : legacy ? [legacy] : [];
+  const canonical = raw
+    .map((value) => INDUSTRY_BY_LOWER.get(String(value).trim().toLowerCase()))
+    .filter((value): value is string => Boolean(value));
+  return [...new Set(canonical)].slice(0, MAX_CATEGORIES);
 }
 
 function toNumber(value: string): number {
